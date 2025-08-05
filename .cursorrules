@@ -35,6 +35,7 @@ const additionalInstructions = `
 5. Implement proper offline support
 6. Follow React Native best practices for performance
 7. Use Expo's OTA updates for quick deployments
+8. Implement the solutions for iPhone13 and iPhone14, remember to optimize iOS.
 `;
 
 // TypeScript Guidelines
