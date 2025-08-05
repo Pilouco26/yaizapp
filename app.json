@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "Yaizapp",
+    "slug": "yaizapp",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#f4511e"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yaizapp.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#f4511e"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.yaizapp.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#f4511e"
+        }
+      ]
+    ],
+    "notification": {
+      "icon": "./assets/notification-icon.png",
+      "color": "#f4511e"
+    }
+  }
+}
