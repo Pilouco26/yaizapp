@@ -1,30 +1,31 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../components/Header';
 
 const HomeScreen: React.FC = () => {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <Header title="Yaizapp" />
       <View style={styles.content}>
       <View style={styles.iconContainer}>
         <Ionicons name="home" size={64} color="#f4511e" />
       </View>
       
-      <Text style={styles.title}>Welcome to Yaizapp!</Text>
-      <Text style={styles.subtitle}>Your React Native Expo App</Text>
+      <Text style={styles.title}>¡Bienvenido a Yaizapp!</Text>
+      <Text style={styles.subtitle}>Tu Aplicación React Native Expo</Text>
       
       <TouchableOpacity style={styles.button}>
         <Ionicons name="heart" size={24} color="#fff" />
-        <Text style={styles.buttonText}>Get Started</Text>
+        <Text style={styles.buttonText}>Comenzar</Text>
       </TouchableOpacity>
       
       <View style={styles.featuresContainer}>
-        <Text style={styles.featuresTitle}>Features:</Text>
+        <Text style={styles.featuresTitle}>Características:</Text>
         <View style={styles.featureItem}>
           <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
-          <Text style={styles.featureText}>TypeScript Support</Text>
+          <Text style={styles.featureText}>Soporte TypeScript</Text>
         </View>
         <View style={styles.featureItem}>
           <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
@@ -32,15 +33,15 @@ const HomeScreen: React.FC = () => {
         </View>
         <View style={styles.featureItem}>
           <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
-          <Text style={styles.featureText}>Expo Vector Icons</Text>
+          <Text style={styles.featureText}>Iconos Expo Vector</Text>
         </View>
         <View style={styles.featureItem}>
           <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
-          <Text style={styles.featureText}>Secure Storage Ready</Text>
+          <Text style={styles.featureText}>Almacenamiento Seguro</Text>
         </View>
       </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 

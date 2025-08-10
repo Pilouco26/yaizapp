@@ -5,39 +5,39 @@ import Header from '../components/Header';
 const ProfileScreen: React.FC = () => {
   return (
     <View style={styles.container}>
-      <Header title="Profile" />
+      <Header title="Perfil" />
       <ScrollView style={styles.content}>
       <View style={styles.header}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>👤</Text>
         </View>
-        <Text style={styles.name}>User Name</Text>
-        <Text style={styles.email}>user@example.com</Text>
+        <Text style={styles.name}>Nombre de Usuario</Text>
+        <Text style={styles.email}>usuario@ejemplo.com</Text>
       </View>
       
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account Settings</Text>
+        <Text style={styles.sectionTitle}>Configuración de Cuenta</Text>
         <View style={styles.menuItem}>
-          <Text style={styles.menuText}>Personal Information</Text>
+          <Text style={styles.menuText}>Información Personal</Text>
         </View>
         <View style={styles.menuItem}>
-          <Text style={styles.menuText}>Security</Text>
+          <Text style={styles.menuText}>Seguridad</Text>
         </View>
         <View style={styles.menuItem}>
-          <Text style={styles.menuText}>Notifications</Text>
+          <Text style={styles.menuText}>Notificaciones</Text>
         </View>
       </View>
       
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>App Settings</Text>
+        <Text style={styles.sectionTitle}>Configuración de la App</Text>
         <View style={styles.menuItem}>
-          <Text style={styles.menuText}>Language</Text>
+          <Text style={styles.menuText}>Idioma</Text>
         </View>
         <View style={styles.menuItem}>
-          <Text style={styles.menuText}>Theme</Text>
+          <Text style={styles.menuText}>Tema</Text>
         </View>
         <View style={styles.menuItem}>
-          <Text style={styles.menuText}>About</Text>
+          <Text style={styles.menuText}>Acerca de</Text>
         </View>
       </View>
       </ScrollView>

@@ -1,72 +1,95 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  Alert,
+  RefreshControl,
+  ScrollView,
+  ActivityIndicator,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../components/Header';
-
-interface Bill {
-  id: string;
-  name: string;
-  amount: number;
-  dueDate: string;
-  isPaid: boolean;
-  category: string;
-}
+import CustomButton from '../components/CustomButton';
+import JSONImportModal from '../components/JSONImportModal';
+import NetworkTest from '../components/NetworkTest';
+import { useBillsData } from '../hooks/useBillsData';
+import { Bill } from '../utils/types';
+import { formatDate } from '../utils/helpers';
+import { getBills } from '../services/BillsService';
+import sampleBills from '../utils/sampleBills.json';
 
 const BillsScreen: React.FC = () => {
-  const [bills] = useState<Bill[]>([
-    {
-      id: '1',
-      name: 'Electricity Bill',
-      amount: 85.50,
-      dueDate: '2024-01-15',
-      isPaid: false,
-      category: 'Utilities'
-    },
-    {
-      id: '2',
-      name: 'Internet Service',
-      amount: 59.99,
-      dueDate: '2024-01-20',
-      isPaid: true,
-      category: 'Utilities'
-    },
-    {
-      id: '3',
-      name: 'Phone Bill',
-      amount: 45.00,
-      dueDate: '2024-01-25',
-      isPaid: false,
-      category: 'Communication'
-    },
-    {
-      id: '4',
-      name: 'Rent',
-      amount: 1200.00,
-      dueDate: '2024-01-01',
-      isPaid: true,
-      category: 'Housing'
-    }
-  ]);
+  const [showImportModal, setShowImportModal] = useState(false);
 
-  const totalBills = bills.reduce((sum, bill) => sum + bill.amount, 0);
-  const paidBills = bills.filter(bill => bill.isPaid);
-  const unpaidBills = bills.filter(bill => !bill.isPaid);
-  const totalPaid = paidBills.reduce((sum, bill) => sum + bill.amount, 0);
-  const totalUnpaid = unpaidBills.reduce((sum, bill) => sum + bill.amount, 0);
+  const {
+    bills,
+    isLoading,
+    error,
+    isConnected,
+    processJSONData,
+    toggleBillPayment,
+    getSummaryStats,
+    clearBills,
+  } = useBillsData();
+
+  const [isFetching, setIsFetching] = useState(false);
+
+  // Combina el loading interno del hook con el de la petición externa
+  const loading = isLoading || isFetching;
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('es-ES', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'EUR',
     }).format(amount);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
+  /**
+   * Descarga las facturas desde Mockoon y las adapta al tipo Bill
+   */
+  const fetchBillsFromAPI = async () => {
+  try {
+    setIsFetching(true);
+
+    const apiBills = await getBills();
+
+    const transformed = apiBills.map((item: any, idx: number) => {
+      // Parse the date from ISO format (e.g., "2024-01-15")
+      const isoDate = new Date(item.date).toISOString();
+
+      // Parse the amount value (it's already a number, but ensure it's positive)
+      const amount = Math.abs(Number(item.value));
+
+      const transformedBill = {
+        id: `api-${idx}`,
+        name: item.description,
+        category: 'Otros',
+        dueDate: isoDate,
+        amount,
+        currency: 'EUR', // Default to EUR as per your preference
+        isPaid: false,
+      } as Bill;
+      
+      return transformedBill;
     });
-  };
+
+    await processJSONData(transformed);
+
+  } catch (err: any) {
+    Alert.alert('Error', err.message || 'No se pudieron cargar las facturas');
+  } finally {
+    setIsFetching(false);
+  }
+};
+
+  useEffect(() => {
+    // Cargar facturas desde la API al montar el componente
+    fetchBillsFromAPI();
+  }, []);
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -76,85 +99,177 @@ const BillsScreen: React.FC = () => {
         return 'call';
       case 'Housing':
         return 'home';
+      case 'Insurance':
+        return 'shield';
+      case 'Transportation':
+        return 'car';
+      case 'Food':
+        return 'restaurant';
       default:
         return 'document';
     }
   };
 
-  return (
-    <View style={styles.container}>
-      <Header title="Bills" />
-      <ScrollView style={styles.content}>
-        {/* Summary Cards */}
-        <View style={styles.summaryContainer}>
-          <View style={styles.summaryCard}>
-            <Ionicons name="wallet" size={24} color="#f4511e" />
-            <Text style={styles.summaryAmount}>{formatCurrency(totalBills)}</Text>
-            <Text style={styles.summaryLabel}>Total Bills</Text>
-          </View>
-          
-          <View style={styles.summaryCard}>
-            <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
-            <Text style={styles.summaryAmount}>{formatCurrency(totalPaid)}</Text>
-            <Text style={styles.summaryLabel}>Paid</Text>
-          </View>
-          
-          <View style={styles.summaryCard}>
-            <Ionicons name="alert-circle" size={24} color="#F44336" />
-            <Text style={styles.summaryAmount}>{formatCurrency(totalUnpaid)}</Text>
-            <Text style={styles.summaryLabel}>Unpaid</Text>
-          </View>
-        </View>
+  /**
+   * Convierte un array genérico de objetos
+   * { date: string; description: string; value: number } | JSONBillData
+   * al formato JSONBillData que la aplicación maneja.
+   */
+  const normalizeJSONBills = (data: any[]): Bill[] =>
+    data.map((item, idx) => {
+      // Si ya llega en formato correcto se devuelve tal cual
+      if (item.id && item.dueDate && item.amount !== undefined) {
+        return item as Bill;
+      }
 
+      const isoDate =
+        typeof item.date === 'string'
+          ? new Date(item.date).toISOString()
+          : new Date().toISOString();
+
+      return {
+        id: `import-${idx}-${Date.now()}`,
+        name: item.description ?? 'Sin descripción',
+        category: 'Otros',
+        dueDate: isoDate,
+        amount: typeof item.value === 'number' ? item.value : 0,
+        currency: 'EUR',
+        isPaid: false,
+      } as Bill;
+    });
+
+  const handleImportJSON = async (jsonData: Bill[] | any[]) => {
+    const normalized = normalizeJSONBills(jsonData);
+    await processJSONData(normalized);
+    setShowImportModal(false);
+  };
+  const handleBillPress = (billId: string) => {
+    toggleBillPayment(billId);
+  };
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <Header title="Facturas" />
+      
+      {/* Connection Status */}
+      {error && (
+        <View style={styles.errorContainer}>
+          <Ionicons name="cloud-offline" size={20} color="#F44336" />
+          <Text style={styles.errorText}>Modo Sin Conexión - {error}</Text>
+        </View>
+      )}
+      
+      {loading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#f4511e" />
+          <Text style={styles.loadingText}>Cargando facturas...</Text>
+        </View>
+      )}
+      
+      <ScrollView style={styles.content}>
+        {/* Network Test Component */}
+        <NetworkTest onTestComplete={(success) => {
+          if (success) {
+            console.log('🎉 ¡Prueba de red exitosa, ahora puedes cargar facturas!');
+          } else {
+            console.log('❌ Prueba de red fallida, revisa tu configuración');
+          }
+        }} />
+        
         {/* Bills List */}
         <View style={styles.billsContainer}>
-          <Text style={styles.sectionTitle}>All Bills</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Todas las Facturas ({bills.length})</Text>
+            {bills.length > 0 && (
+              <TouchableOpacity onPress={clearBills} style={styles.clearButton}>
+                <Ionicons name="trash" size={16} color="#F44336" />
+              </TouchableOpacity>
+            )}
+          </View>
           
-          {bills.map((bill) => (
-            <TouchableOpacity key={bill.id} style={styles.billItem}>
-              <View style={styles.billIcon}>
-                <Ionicons 
-                  name={getCategoryIcon(bill.category) as any} 
-                  size={24} 
-                  color={bill.isPaid ? '#4CAF50' : '#f4511e'} 
-                />
-              </View>
-              
-              <View style={styles.billInfo}>
-                <Text style={styles.billName}>{bill.name}</Text>
-                <Text style={styles.billCategory}>{bill.category}</Text>
-                <Text style={styles.billDueDate}>Due: {formatDate(bill.dueDate)}</Text>
-              </View>
-              
-              <View style={styles.billAmount}>
-                <Text style={[
-                  styles.billAmountText,
-                  { color: bill.isPaid ? '#4CAF50' : '#F44336' }
-                ]}>
-                  {formatCurrency(bill.amount)}
-                </Text>
-                <View style={[
-                  styles.statusIndicator,
-                  { backgroundColor: bill.isPaid ? '#4CAF50' : '#F44336' }
-                ]}>
+          {bills.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Ionicons name="document-text" size={48} color="#ccc" />
+              <Text style={styles.emptyStateText}>No se encontraron facturas</Text>
+              <Text style={styles.emptyStateSubtext}>Importa datos JSON para comenzar</Text>
+            </View>
+          ) : (
+            bills.map((bill) => (
+              <TouchableOpacity key={bill.id} style={styles.billItem} onPress={() => handleBillPress(bill.id)}>
+                <View style={styles.billIcon}>
                   <Ionicons 
-                    name={bill.isPaid ? 'checkmark' : 'close'} 
-                    size={12} 
-                    color="#fff" 
+                    name={getCategoryIcon(bill.category) as any} 
+                    size={24} 
+                    color={bill.isPaid ? '#4CAF50' : '#f4511e'} 
                   />
                 </View>
-              </View>
-            </TouchableOpacity>
-          ))}
+                
+                <View style={styles.billInfo}>
+                  <Text style={styles.billName}>{bill.name}</Text>
+                  <Text style={styles.billCategory}>{bill.category}</Text>
+                  <Text style={styles.billDueDate}>Vence: {formatDate(bill.dueDate)}</Text>
+                </View>
+                
+                <View style={styles.billAmount}>
+                  <Text style={[
+                    styles.billAmountText,
+                    { color: bill.isPaid ? '#4CAF50' : '#F44336' }
+                  ]}>
+                    {formatCurrency(bill.amount)}
+                  </Text>
+                  <View style={[
+                    styles.statusIndicator,
+                    { backgroundColor: bill.isPaid ? '#4CAF50' : '#F44336' }
+                  ]}>
+                    <Ionicons 
+                      name={bill.isPaid ? 'checkmark' : 'close'} 
+                      size={12} 
+                      color="#fff" 
+                    />
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
         </View>
 
-        {/* Add Bill Button */}
-        <TouchableOpacity style={styles.addButton}>
-          <Ionicons name="add" size={24} color="#fff" />
-          <Text style={styles.addButtonText}>Add New Bill</Text>
+        {/* API and Import Buttons */}
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity 
+            style={styles.apiButton}
+            onPress={fetchBillsFromAPI}
+          >
+            <Ionicons name="refresh" size={24} color="#fff" />
+            <Text style={styles.buttonText}>Recargar desde API</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.importButton}
+            onPress={() => setShowImportModal(true)}
+          >
+            <Ionicons name="cloud-upload" size={24} color="#fff" />
+            <Text style={styles.buttonText}>Importar JSON</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Sample Data Button */}
+        <TouchableOpacity 
+          style={styles.sampleButton}
+          onPress={() => handleImportJSON(normalizeJSONBills(sampleBills as any[]))}
+        >
+          <Ionicons name="document-text" size={24} color="#fff" />
+          <Text style={styles.buttonText}>Cargar Datos de Ejemplo</Text>
         </TouchableOpacity>
       </ScrollView>
-    </View>
+
+      {/* JSON Import Modal */}
+      <JSONImportModal
+        visible={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={handleImportJSON}
+        isLoading={loading}
+      />
+    </SafeAreaView>
   );
 };
 
@@ -166,6 +281,29 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 16,
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffebee',
+    padding: 12,
+    marginHorizontal: 16,
+    marginTop: 8,
+    borderRadius: 8,
+  },
+  errorText: {
+    color: '#F44336',
+    marginLeft: 8,
+    fontSize: 12,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 8,
+    color: '#666',
+    fontSize: 14,
   },
   summaryContainer: {
     flexDirection: 'row',
@@ -219,6 +357,15 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 16,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  clearButton: {
+    padding: 8,
+  },
   billItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -268,21 +415,61 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 4,
   },
-  addButton: {
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#666',
+    marginTop: 16,
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: '#999',
+    marginTop: 8,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+  },
+  importButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f4511e',
+    backgroundColor: '#2196F3',
     paddingVertical: 16,
     borderRadius: 12,
-    marginTop: 8,
+    flex: 1,
+    marginLeft: 8,
   },
-  addButtonText: {
+  apiButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4CAF50',
+    paddingVertical: 16,
+    borderRadius: 12,
+    flex: 1,
+    marginRight: 8,
+  },
+  buttonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 8,
   },
+  sampleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#9C27B0',
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginTop: 16,
+  },
 });
 
-export default BillsScreen; 
+export default BillsScreen;

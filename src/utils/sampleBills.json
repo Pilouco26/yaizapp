@@ -1,0 +1,22 @@
+[
+  {
+    "date": "2024-01-15",
+    "description": "Electricity Bill",
+    "value": -85.5
+  },
+  {
+    "date": "2024-01-20",
+    "description": "Internet Service",
+    "value": -59.99
+  },
+  {
+    "date": "2024-02-01",
+    "description": "Health Insurance",
+    "value": 180
+  },
+  {
+    "date": "2024-01-25",
+    "description": "Grocery Shopping",
+    "value": -125.75
+  }
+]

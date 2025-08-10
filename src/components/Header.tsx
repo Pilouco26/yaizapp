@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface HeaderProps {
   title: string;
@@ -8,15 +7,16 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ title }) => {
   return (
-    <SafeAreaView style={styles.header}>
+    <View style={styles.header}>
       <Text style={styles.title}>{title}</Text>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   header: {
     backgroundColor: '#f4511e',
+    paddingTop: 50, // Account for status bar
     paddingBottom: 15,
     paddingHorizontal: 20,
     alignItems: 'center',

@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HomeScreen from '../screens/HomeScreen';
 import SavingsScreen from '../screens/SavingsScreen';
@@ -44,7 +45,7 @@ const TabIcon: React.FC<{ focused: boolean; name: string }> = ({ focused, name }
 
 const TabNavigator: React.FC = () => {
   const insets = useSafeAreaInsets();
-  
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -55,14 +56,26 @@ const TabNavigator: React.FC = () => {
           backgroundColor: '#fff',
           borderTopWidth: 1,
           borderTopColor: '#e0e0e0',
-          paddingBottom: insets.bottom > 0 ? insets.bottom : 5,
+          paddingBottom: Platform.OS === 'ios' ? insets.bottom : 5,
           paddingTop: 5,
-          height: 60 + (insets.bottom > 0 ? insets.bottom : 0),
+          height: Platform.OS === 'ios' ? 60 + insets.bottom : 60,
+          // iPhone-specific styling
+          shadowColor: '#000',
+          shadowOffset: {
+            width: 0,
+            height: -2,
+          },
+          shadowOpacity: 0.1,
+          shadowRadius: 3.84,
+          elevation: 10,
         },
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '500',
+          marginBottom: Platform.OS === 'ios' ? 0 : 2,
         },
+        tabBarActiveTintColor: '#f4511e',
+        tabBarInactiveTintColor: '#666',
         headerShown: false, // Hide individual screen headers since we have a main header
       })}
     >
@@ -70,28 +83,28 @@ const TabNavigator: React.FC = () => {
         name="Home" 
         component={HomeScreen}
         options={{
-          title: 'Home',
+          title: 'Inicio',
         }}
       />
       <Tab.Screen 
         name="Savings" 
         component={SavingsScreen}
         options={{
-          title: 'Savings',
+          title: 'Ahorros',
         }}
       />
       <Tab.Screen 
         name="Bills" 
         component={BillsScreen}
         options={{
-          title: 'Bills',
+          title: 'Facturas',
         }}
       />
       <Tab.Screen 
         name="Profile" 
         component={ProfileScreen}
         options={{
-          title: 'Profile',
+          title: 'Perfil',
         }}
       />
     </Tab.Navigator>

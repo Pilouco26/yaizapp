@@ -18,10 +18,10 @@ const SavingsScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Header title="Savings" />
+      <Header title="Ahorros" />
       <View style={styles.content}>
         <View style={styles.savingsContainer}>
-        <Text style={styles.savingsLabel}>Your Savings</Text>
+        <Text style={styles.savingsLabel}>Tus Ahorros</Text>
         
         <View style={styles.amountContainer}>
           <Text style={[
@@ -41,7 +41,7 @@ const SavingsScreen: React.FC = () => {
         </View>
 
         <Text style={styles.statusText}>
-          {isPositive ? 'Great job! You\'re saving money.' : 'You\'re currently in debt.'}
+          {isPositive ? '¡Excelente trabajo! Estás ahorrando dinero.' : 'Actualmente estás en deuda.'}
         </Text>
       </View>
       </View>

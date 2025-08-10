@@ -33,7 +33,7 @@ const AppNavigator: React.FC = () => {
         name="Savings"
         component={SavingsScreen}
         options={{
-          title: 'Savings',
+          title: 'Ahorros',
           headerTitleAlign: 'center',
         }}
       />

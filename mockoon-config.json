@@ -1,0 +1,96 @@
+{
+  "version": "2.5.0",
+  "name": "Bills API",
+  "description": "Mock API for Bills management",
+  "folders": [],
+  "environments": [
+    {
+      "uuid": "bills-api-env",
+      "name": "Bills API Environment",
+      "data": [
+        {
+          "uuid": "get-bills-route",
+          "type": "route",
+          "documentation": "Get all bills",
+          "method": "GET",
+          "endpoint": "api/bills",
+          "responses": [
+            {
+              "uuid": "get-bills-response",
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"1\",\n      \"name\": \"Electricity Bill\",\n      \"amount\": 85.50,\n      \"dueDate\": \"2024-01-15\",\n      \"isPaid\": false,\n      \"category\": \"Utilities\"\n    },\n    {\n      \"id\": \"2\",\n      \"name\": \"Internet Service\",\n      \"amount\": 59.99,\n      \"dueDate\": \"2024-01-20\",\n      \"isPaid\": true,\n      \"category\": \"Utilities\"\n    },\n    {\n      \"id\": \"3\",\n      \"name\": \"Phone Bill\",\n      \"amount\": 45.00,\n      \"dueDate\": \"2024-01-25\",\n      \"isPaid\": false,\n      \"category\": \"Communication\"\n    },\n    {\n      \"id\": \"4\",\n      \"name\": \"Rent\",\n      \"amount\": 1200.00,\n      \"dueDate\": \"2024-01-01\",\n      \"isPaid\": true,\n      \"category\": \"Housing\"\n    }\n  ]\n}",
+              "latency": 0,
+              "statusCode": 200,
+              "label": "Success",
+              "headers": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "uuid": "upload-bills-route",
+          "type": "route",
+          "documentation": "Upload JSON bills data",
+          "method": "POST",
+          "endpoint": "api/bills/upload",
+          "responses": [
+            {
+              "uuid": "upload-bills-response",
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"bill-1703123456789-0\",\n      \"name\": \"Electricity Bill\",\n      \"amount\": 85.50,\n      \"dueDate\": \"2024-01-15\",\n      \"isPaid\": true,\n      \"category\": \"Utilities\"\n    },\n    {\n      \"id\": \"bill-1703123456789-1\",\n      \"name\": \"Internet Service\",\n      \"amount\": 59.99,\n      \"dueDate\": \"2024-01-20\",\n      \"isPaid\": true,\n      \"category\": \"Utilities\"\n    }\n  ],\n  \"message\": \"Successfully processed 2 bills\"\n}",
+              "latency": 0,
+              "statusCode": 200,
+              "label": "Success",
+              "headers": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ]
+            },
+            {
+              "uuid": "upload-bills-error",
+              "body": "{\n  \"success\": false,\n  \"error\": \"Invalid JSON format\"\n}",
+              "latency": 0,
+              "statusCode": 400,
+              "label": "Error",
+              "headers": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "port": 3000,
+      "endpointPrefix": "",
+      "proxyMode": false,
+      "proxyHost": "",
+      "proxyPort": 0,
+      "proxyRemovePrefix": false,
+      "cors": true,
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "keepSession": false,
+    "enableTelemetry": false
+  }
+} 
