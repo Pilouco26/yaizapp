@@ -3,13 +3,12 @@ export interface Bill {
   name: string;
   amount: number;
   dueDate: string;
-  isPaid: boolean;
   category: string;
   currency: string;
 }
 
 export interface JSONBillData {
-  id: number;
+  id?: number;
   date: string;
   description: string;
   value: number;

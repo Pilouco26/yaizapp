@@ -61,4 +61,37 @@ export const generateId = (): string => {
 export const truncateText = (text: string, maxLength: number): string => {
   if (text.length <= maxLength) return text;
   return text.substr(0, maxLength) + '...';
+};
+
+/**
+ * Gets current month and year information
+ */
+export const getCurrentMonthYear = () => {
+  const now = new Date();
+  return {
+    month: now.getMonth(),
+    year: now.getFullYear(),
+    monthName: now.toLocaleDateString('es-ES', { month: 'long' }),
+    monthYear: now.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+  };
+};
+
+/**
+ * Checks if a date is in the current month
+ */
+export const isDateInCurrentMonth = (date: Date | string): boolean => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const { month, year } = getCurrentMonthYear();
+  
+  return dateObj.getMonth() === month && dateObj.getFullYear() === year;
+};
+
+/**
+ * Formats currency amount
+ */
+export const formatCurrency = (amount: number, currency: string = 'EUR'): string => {
+  return new Intl.NumberFormat('es-ES', {
+    style: 'currency',
+    currency: currency,
+  }).format(amount);
 }; 

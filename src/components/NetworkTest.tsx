@@ -1,63 +1,63 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { API_CONFIG, getApiUrl } from '../utils/config';
+import { API_CONFIG, getFullApiUrl, getCurrentNetworkInfo } from '../utils/config';
 
 interface NetworkTestProps {
   onTestComplete?: (success: boolean) => void;
 }
 
+interface TestResult {
+  success: boolean;
+  message: string;
+}
+
 const NetworkTest: React.FC<NetworkTestProps> = ({ onTestComplete }) => {
   const [isTesting, setIsTesting] = useState(false);
-  const [testResult, setTestResult] = useState<'pending' | 'success' | 'error'>('pending');
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
+  const [currentApiUrl, setCurrentApiUrl] = useState<string>('');
+  const [currentNetwork, setCurrentNetwork] = useState<string>('');
 
-  const testConnection = async () => {
+  useEffect(() => {
+    // Get the current API URL and network info when component mounts
+    const getCurrentInfo = async () => {
+      try {
+        const url = getFullApiUrl(API_CONFIG.ENDPOINTS.BILLS);
+        const networkInfo = getCurrentNetworkInfo();
+        setCurrentApiUrl(url);
+        setCurrentNetwork(networkInfo.name || 'Detectando...');
+      } catch (error) {
+        setCurrentApiUrl('Error getting URL');
+        setCurrentNetwork('Error');
+      }
+    };
+    getCurrentInfo();
+  }, []);
+
+  const testNetwork = async () => {
     setIsTesting(true);
-    setTestResult('pending');
+    setTestResult(null);
     
     try {
-      const testUrl = await getApiUrl(API_CONFIG.ENDPOINTS.BILLS);
+      const url = getFullApiUrl(API_CONFIG.ENDPOINTS.BILLS);
       
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout for test
-      
-      const response = await fetch(testUrl, {
+      const response = await fetch(url, {
         method: 'GET',
-        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
       
-      clearTimeout(timeoutId);
-      
       if (response.ok) {
-        setTestResult('success');
-        Alert.alert(
-          'Prueba de Red', 
-          '✅ ¡Conexión exitosa a la API de Mockoon!\n\nTu configuración de red está funcionando correctamente.',
-          [{ text: '¡Excelente!' }]
-        );
+        setTestResult({ success: true, message: 'Conexión exitosa' });
         onTestComplete?.(true);
       } else {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        setTestResult({ success: false, message: `Error HTTP: ${response.status}` });
+        onTestComplete?.(false);
       }
-      
-    } catch (error: any) {
-      setTestResult('error');
-      
-      let errorMessage = 'Prueba de red fallida';
-      
-      if (error.name === 'AbortError') {
-        errorMessage = 'La conexión ha expirado. Verifica si Mockoon está en ejecución y accesible.';
-      } else if (error.message.includes('Network request failed')) {
-        errorMessage = 'La solicitud de red ha fallado. Verifica tu dirección IP y configuración de red.';
-      } else {
-        errorMessage = error.message || 'Se produjo un error desconocido';
-      }
-      
-      Alert.alert(
-        'Prueba de Red Fallida', 
-        `❌ ${errorMessage}\n\nConsejos de solución de problemas:\n• Verifica que Mockoon esté en ejecución en el puerto 3000\n• Revisa la dirección IP en config.ts\n• Asegúrate de que el dispositivo y el ordenador estén en la misma red\n• Verifica la configuración del firewall`,
-        [{ text: 'OK' }]
-      );
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      setTestResult({ success: false, message: `Error de conexión: ${errorMessage}` });
       onTestComplete?.(false);
     } finally {
       setIsTesting(false);
@@ -65,24 +65,26 @@ const NetworkTest: React.FC<NetworkTestProps> = ({ onTestComplete }) => {
   };
 
   const getStatusIcon = () => {
-    switch (testResult) {
-      case 'success':
-        return <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />;
-      case 'error':
-        return <Ionicons name="close-circle" size={24} color="#F44336" />;
-      default:
-        return <Ionicons name="help-circle" size={24} color="#FF9800" />;
+    if (!testResult) {
+      return <Ionicons name="help-circle" size={24} color="#FF9800" />;
+    }
+    
+    if (testResult.success) {
+      return <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />;
+    } else {
+      return <Ionicons name="close-circle" size={24} color="#F44336" />;
     }
   };
 
   const getStatusText = () => {
-    switch (testResult) {
-      case 'success':
-        return 'Prueba de Red';
-      case 'error':
-        return 'Conexión Fallida';
-      default:
-        return 'No Probar';
+    if (!testResult) {
+      return 'No Probar';
+    }
+    
+    if (testResult.success) {
+      return 'Prueba de Red';
+    } else {
+      return 'Conexión Fallida';
     }
   };
 
@@ -100,25 +102,35 @@ const NetworkTest: React.FC<NetworkTestProps> = ({ onTestComplete }) => {
       
       <TouchableOpacity 
         style={[styles.testButton, isTesting && styles.testButtonDisabled]}
-        onPress={testConnection}
+        onPress={testNetwork}
         disabled={isTesting}
       >
-        <Ionicons 
-          name={isTesting ? "hourglass" : "refresh"} 
-          size={20} 
-          color="#fff" 
-        />
+        {isTesting ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <Ionicons name="refresh" size={20} color="#fff" />
+        )}
         <Text style={styles.testButtonText}>
           {isTesting ? 'Probando...' : 'Probar Conexión'}
         </Text>
       </TouchableOpacity>
       
-                    <View style={styles.infoContainer}>
-                <Text style={styles.infoTitle}>Configuración Actual:</Text>
-                <Text style={styles.infoText}>Endpoint: {API_CONFIG.ENDPOINTS.BILLS}</Text>
-                <Text style={styles.infoText}>Puerto: 3000</Text>
-                <Text style={styles.infoText}>IP Dinámica: Habilitada</Text>
-              </View>
+      <View style={styles.infoContainer}>
+        <Text style={styles.infoTitle}>Configuración Actual:</Text>
+        <Text style={styles.infoText}>Red Detectada: {currentNetwork}</Text>
+        <Text style={styles.infoText}>Endpoint: {API_CONFIG.ENDPOINTS.BILLS}</Text>
+        <Text style={styles.infoText}>Puerto: 3000</Text>
+        <Text style={styles.infoText}>IP Dinámica: Habilitada</Text>
+        <Text style={styles.infoText}>URL Actual: {currentApiUrl}</Text>
+      </View>
+      
+      {testResult && (
+        <View style={[styles.resultContainer, { backgroundColor: testResult.success ? '#e8f5e8' : '#ffebee' }]}>
+          <Text style={[styles.resultText, { color: testResult.success ? '#2e7d32' : '#c62828' }]}>
+            {testResult.message}
+          </Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -182,6 +194,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     padding: 12,
     borderRadius: 8,
+    marginBottom: 16,
   },
   infoTitle: {
     fontSize: 12,
@@ -193,6 +206,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#666',
     marginBottom: 4,
+  },
+  resultContainer: {
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  resultText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
 

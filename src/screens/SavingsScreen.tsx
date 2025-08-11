@@ -3,48 +3,82 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 
-const SavingsScreen: React.FC = () => {
-  // For now, let's use a sample savings value
-  // In a real app, this would come from your data source
-  const [savings] = useState(1250.75); // Positive value for green color
+type TabType = 'solo' | 'familia';
 
-  const isPositive = savings >= 0;
-  const formattedSavings = new Intl.NumberFormat('de-DE', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(Math.abs(savings));
+const SavingsScreen: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<TabType>('solo');
+
+  const renderSoloContent = () => (
+    <View style={styles.tabContent}>
+      <View style={styles.contentContainer}>
+        <Ionicons name="person" size={64} color="#f4511e" />
+        <Text style={styles.tabTitle}>Ahorros Personales</Text>
+        <Text style={styles.tabSubtitle}>Gestiona tus ahorros individuales</Text>
+        <Text style={styles.placeholderText}>Contenido de Solo - Funcionando ✅</Text>
+      </View>
+    </View>
+  );
+
+  const renderFamiliaContent = () => (
+    <View style={styles.tabContent}>
+      <View style={styles.contentContainer}>
+        <Ionicons name="people" size={64} color="#2196F3" />
+        <Text style={styles.tabTitle}>Ahorros Familiares</Text>
+        <Text style={styles.tabSubtitle}>Gestiona los ahorros de la familia</Text>
+        <Text style={styles.placeholderText}>Contenido de Familia - Funcionando ✅</Text>
+      </View>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
       <Header title="Ahorros" />
-      <View style={styles.content}>
-        <View style={styles.savingsContainer}>
-        <Text style={styles.savingsLabel}>Tus Ahorros</Text>
-        
-        <View style={styles.amountContainer}>
-          <Text style={[
-            styles.amount,
-            { color: isPositive ? '#4CAF50' : '#F44336' }
-          ]}>
-            {isPositive ? '+' : '-'} {formattedSavings}
-          </Text>
-        </View>
-
-        <View style={styles.iconContainer}>
+      
+      {/* Tab Header */}
+      <View style={styles.tabHeader}>
+        <TouchableOpacity
+          style={[
+            styles.tabButton,
+            activeTab === 'solo' && styles.activeTabButton
+          ]}
+          onPress={() => setActiveTab('solo')}
+        >
           <Ionicons 
-            name={isPositive ? "trending-up" : "trending-down"} 
-            size={48} 
-            color={isPositive ? '#4CAF50' : '#F44336'} 
+            name="person" 
+            size={20} 
+            color={activeTab === 'solo' ? '#fff' : '#666'} 
           />
-        </View>
+          <Text style={[
+            styles.tabButtonText,
+            activeTab === 'solo' && styles.activeTabButtonText
+          ]}>
+            Solo
+          </Text>
+        </TouchableOpacity>
 
-        <Text style={styles.statusText}>
-          {isPositive ? '¡Excelente trabajo! Estás ahorrando dinero.' : 'Actualmente estás en deuda.'}
-        </Text>
+        <TouchableOpacity
+          style={[
+            styles.tabButton,
+            activeTab === 'familia' && styles.activeTabButton
+          ]}
+          onPress={() => setActiveTab('familia')}
+        >
+          <Ionicons 
+            name="people" 
+            size={20} 
+            color={activeTab === 'familia' ? '#fff' : '#666'} 
+          />
+          <Text style={[
+            styles.tabButtonText,
+            activeTab === 'familia' && styles.activeTabButtonText
+          ]}>
+            Familia
+          </Text>
+        </TouchableOpacity>
       </View>
-      </View>
+
+      {/* Tab Content */}
+      {activeTab === 'solo' ? renderSoloContent() : renderFamiliaContent()}
     </View>
   );
 };
@@ -54,39 +88,85 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  content: {
+  tabHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#f8f9fa',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  tabButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    backgroundColor: 'transparent',
+    minWidth: 100,
+    justifyContent: 'center',
+  },
+  activeTabButton: {
+    backgroundColor: '#007bff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  tabButtonText: {
+    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+  },
+  activeTabButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  tabContent: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
   },
-  savingsContainer: {
+  contentContainer: {
     alignItems: 'center',
-    marginBottom: 40,
+    padding: 30,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
-  savingsLabel: {
+  tabTitle: {
     fontSize: 24,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  amountContainer: {
-    marginBottom: 20,
-  },
-  amount: {
-    fontSize: 48,
     fontWeight: 'bold',
+    color: '#333',
+    marginTop: 20,
     textAlign: 'center',
   },
-  iconContainer: {
-    marginBottom: 20,
-  },
-  statusText: {
-    fontSize: 18,
+  tabSubtitle: {
+    fontSize: 16,
     color: '#666',
+    marginTop: 5,
     textAlign: 'center',
-    lineHeight: 24,
+  },
+  placeholderText: {
+    fontSize: 18,
+    color: '#999',
+    marginTop: 20,
+    textAlign: 'center',
   },
 });
 

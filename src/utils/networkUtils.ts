@@ -1,4 +1,31 @@
 import { Platform } from 'react-native';
+import { NETWORK_CONFIGS, COMMON_FALLBACK_IPS, NetworkConfig } from './networkConfigs';
+
+/**
+ * Detects which network configuration is currently working
+ * Tests all configured networks and returns the first one that responds
+ */
+export const detectCurrentNetwork = async (): Promise<NetworkConfig> => {
+  
+  // Test each network configuration
+  for (const [key, config] of Object.entries(NETWORK_CONFIGS)) {
+    try {
+      const isValid = await validateIPAddress(config.ip, 3000);
+      
+      if (isValid) {
+        return config;
+      }
+    } catch (error) {
+      continue;
+    }
+  }
+  
+  return {
+    name: 'Fallback Network',
+    ip: '192.168.1.100',
+    description: 'Default fallback IP'
+  };
+};
 
 /**
  * Gets the local IP address of the device/computer
@@ -25,7 +52,6 @@ export const getLocalIPAddress = async (): Promise<string> => {
       return await discoverBestWorkingIP();
     }
   } catch (error) {
-
     return getFallbackIPAddress();
   }
 };
@@ -35,18 +61,8 @@ export const getLocalIPAddress = async (): Promise<string> => {
  * This tries common local network ranges
  */
 const getFallbackIPAddress = (): string => {
-  // Common local network ranges
-  const commonRanges = [
-    '192.168.1.100',
-    '192.168.0.100', 
-    '10.0.0.100',
-    '172.20.10.2', // Your current IP
-    '172.16.0.100',
-  ];
-
-  // For now, return your current IP since we know it works
-  // In a production app, you'd implement proper IP detection
-  return '172.20.10.2';
+  // Use the first common fallback IP
+  return COMMON_FALLBACK_IPS[0];
 };
 
 /**
@@ -59,7 +75,6 @@ export const discoverNetworkIP = async (): Promise<string> => {
     // For now, we'll use the fallback
     return getFallbackIPAddress();
   } catch (error) {
-
     return getFallbackIPAddress();
   }
 };
@@ -69,16 +84,9 @@ export const discoverNetworkIP = async (): Promise<string> => {
  * This is a smart fallback that tries to find a working connection
  */
 export const discoverBestWorkingIP = async (): Promise<string> => {
-  const commonIPs = [
-    '172.20.10.2', // Your current working IP
-    '192.168.1.100',
-    '192.168.0.100', 
-    '10.0.0.100',
-    '172.16.0.100',
-  ];
 
   // Test each IP address to find one that works
-  for (const ip of commonIPs) {
+  for (const ip of COMMON_FALLBACK_IPS) {
     try {
       const isValid = await validateIPAddress(ip, 3000);
       
@@ -89,6 +97,7 @@ export const discoverBestWorkingIP = async (): Promise<string> => {
       continue;
     }
   }
+  
   return getFallbackIPAddress();
 };
 
@@ -98,7 +107,7 @@ export const discoverBestWorkingIP = async (): Promise<string> => {
  */
 export const validateIPAddress = async (ipAddress: string, port: number = 3000): Promise<boolean> => {
   try {
-    const testUrl = `http://${ipAddress}:${port}/bills`;
+    const testUrl = `http://${ipAddress}:${port}/api/bills`; // Updated endpoint
     
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);

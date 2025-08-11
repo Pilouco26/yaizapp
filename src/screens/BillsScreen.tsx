@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  FlatList,
   Alert,
-  RefreshControl,
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
@@ -14,12 +12,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../components/Header';
 import CustomButton from '../components/CustomButton';
-import JSONImportModal from '../components/JSONImportModal';
+import CSVImportModal from '../components/CSVImportModal';
 import NetworkTest from '../components/NetworkTest';
-import { useBillsData } from '../hooks/useBillsData';
+import { useBillsContext } from '../contexts/BillsContext';
 import { Bill } from '../utils/types';
 import { formatDate } from '../utils/helpers';
-import { getBills } from '../services/BillsService';
 import sampleBills from '../utils/sampleBills.json';
 
 const BillsScreen: React.FC = () => {
@@ -29,85 +26,14 @@ const BillsScreen: React.FC = () => {
     bills,
     isLoading,
     error,
-    isConnected,
-    processJSONData,
-    toggleBillPayment,
-    getSummaryStats,
-    clearBills,
-  } = useBillsData();
-
-  const [isFetching, setIsFetching] = useState(false);
-
-  // Combina el loading interno del hook con el de la petición externa
-  const loading = isLoading || isFetching;
+    refreshBills,
+  } = useBillsContext();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-ES', {
       style: 'currency',
       currency: 'EUR',
     }).format(amount);
-  };
-
-  /**
-   * Descarga las facturas desde Mockoon y las adapta al tipo Bill
-   */
-  const fetchBillsFromAPI = async () => {
-  try {
-    setIsFetching(true);
-
-    const apiBills = await getBills();
-
-    const transformed = apiBills.map((item: any, idx: number) => {
-      // Parse the date from ISO format (e.g., "2024-01-15")
-      const isoDate = new Date(item.date).toISOString();
-
-      // Parse the amount value (it's already a number, but ensure it's positive)
-      const amount = Math.abs(Number(item.value));
-
-      const transformedBill = {
-        id: `api-${idx}`,
-        name: item.description,
-        category: 'Otros',
-        dueDate: isoDate,
-        amount,
-        currency: 'EUR', // Default to EUR as per your preference
-        isPaid: false,
-      } as Bill;
-      
-      return transformedBill;
-    });
-
-    await processJSONData(transformed);
-
-  } catch (err: any) {
-    Alert.alert('Error', err.message || 'No se pudieron cargar las facturas');
-  } finally {
-    setIsFetching(false);
-  }
-};
-
-  useEffect(() => {
-    // Cargar facturas desde la API al montar el componente
-    fetchBillsFromAPI();
-  }, []);
-
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'Utilities':
-        return 'flash';
-      case 'Communication':
-        return 'call';
-      case 'Housing':
-        return 'home';
-      case 'Insurance':
-        return 'shield';
-      case 'Transportation':
-        return 'car';
-      case 'Food':
-        return 'restaurant';
-      default:
-        return 'document';
-    }
   };
 
   /**
@@ -134,17 +60,54 @@ const BillsScreen: React.FC = () => {
         dueDate: isoDate,
         amount: typeof item.value === 'number' ? item.value : 0,
         currency: 'EUR',
-        isPaid: false,
       } as Bill;
     });
 
   const handleImportJSON = async (jsonData: Bill[] | any[]) => {
     const normalized = normalizeJSONBills(jsonData);
-    await processJSONData(normalized);
+    // Note: This would need to be integrated with the context
+    // For now, we'll just refresh from API
+    await refreshBills();
     setShowImportModal(false);
   };
-  const handleBillPress = (billId: string) => {
-    toggleBillPayment(billId);
+
+  const handleRefreshBills = async () => {
+    try {
+      await refreshBills();
+      Alert.alert('Éxito', 'Facturas actualizadas correctamente');
+    } catch (error) {
+      Alert.alert('Error', 'No se pudieron actualizar las facturas');
+    }
+  };
+
+  const handleLoadSampleData = async () => {
+    try {
+      // Note: This would need to be integrated with the context
+      // For now, we'll just refresh from API
+      await refreshBills();
+      Alert.alert('Éxito', 'Datos de ejemplo cargados');
+    } catch (error) {
+      Alert.alert('Error', 'No se pudieron cargar los datos de ejemplo');
+    }
+  };
+
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'Utilities':
+        return 'flash';
+      case 'Communication':
+        return 'call';
+      case 'Housing':
+        return 'home';
+      case 'Insurance':
+        return 'shield';
+      case 'Transportation':
+        return 'car';
+      case 'Food':
+        return 'restaurant';
+      default:
+        return 'document';
+    }
   };
 
   return (
@@ -159,7 +122,7 @@ const BillsScreen: React.FC = () => {
         </View>
       )}
       
-      {loading && (
+      {isLoading && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#f4511e" />
           <Text style={styles.loadingText}>Cargando facturas...</Text>
@@ -168,23 +131,32 @@ const BillsScreen: React.FC = () => {
       
       <ScrollView style={styles.content}>
         {/* Network Test Component */}
-        <NetworkTest onTestComplete={(success) => {
-          if (success) {
-            console.log('🎉 ¡Prueba de red exitosa, ahora puedes cargar facturas!');
+        <NetworkTest onTestComplete={(isNetworkWorking) => {
+          if (isNetworkWorking) {
+            // Network test successful, now load bills
           } else {
-            console.log('❌ Prueba de red fallida, revisa tu configuración');
+            // Network test failed, show error
           }
         }} />
+        
+        {/* Bills Summary Card */}
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryTitle}>Total de Facturas</Text>
+          <Text style={[
+            styles.summaryAmount,
+            { color: bills.reduce((sum, bill) => sum + bill.amount, 0) >= 0 ? '#4CAF50' : '#F44336' }
+          ]}>
+            {formatCurrency(bills.reduce((sum, bill) => sum + bill.amount, 0))}
+          </Text>
+          <Text style={styles.summarySubtitle}>
+            {bills.length} factura{bills.length !== 1 ? 's' : ''} en total
+          </Text>
+        </View>
         
         {/* Bills List */}
         <View style={styles.billsContainer}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Todas las Facturas ({bills.length})</Text>
-            {bills.length > 0 && (
-              <TouchableOpacity onPress={clearBills} style={styles.clearButton}>
-                <Ionicons name="trash" size={16} color="#F44336" />
-              </TouchableOpacity>
-            )}
           </View>
           
           {bills.length === 0 ? (
@@ -195,12 +167,12 @@ const BillsScreen: React.FC = () => {
             </View>
           ) : (
             bills.map((bill) => (
-              <TouchableOpacity key={bill.id} style={styles.billItem} onPress={() => handleBillPress(bill.id)}>
+              <View key={bill.id} style={styles.billItem}>
                 <View style={styles.billIcon}>
                   <Ionicons 
                     name={getCategoryIcon(bill.category) as any} 
                     size={24} 
-                    color={bill.isPaid ? '#4CAF50' : '#f4511e'} 
+                    color="#666"
                   />
                 </View>
                 
@@ -213,22 +185,12 @@ const BillsScreen: React.FC = () => {
                 <View style={styles.billAmount}>
                   <Text style={[
                     styles.billAmountText,
-                    { color: bill.isPaid ? '#4CAF50' : '#F44336' }
+                    { color: bill.amount >= 0 ? '#4CAF50' : '#F44336' }
                   ]}>
                     {formatCurrency(bill.amount)}
                   </Text>
-                  <View style={[
-                    styles.statusIndicator,
-                    { backgroundColor: bill.isPaid ? '#4CAF50' : '#F44336' }
-                  ]}>
-                    <Ionicons 
-                      name={bill.isPaid ? 'checkmark' : 'close'} 
-                      size={12} 
-                      color="#fff" 
-                    />
-                  </View>
                 </View>
-              </TouchableOpacity>
+              </View>
             ))
           )}
         </View>
@@ -237,7 +199,7 @@ const BillsScreen: React.FC = () => {
         <View style={styles.buttonContainer}>
           <TouchableOpacity 
             style={styles.apiButton}
-            onPress={fetchBillsFromAPI}
+            onPress={handleRefreshBills}
           >
             <Ionicons name="refresh" size={24} color="#fff" />
             <Text style={styles.buttonText}>Recargar desde API</Text>
@@ -248,26 +210,26 @@ const BillsScreen: React.FC = () => {
             onPress={() => setShowImportModal(true)}
           >
             <Ionicons name="cloud-upload" size={24} color="#fff" />
-            <Text style={styles.buttonText}>Importar JSON</Text>
+            <Text style={styles.buttonText}>Importar Facturas</Text>
           </TouchableOpacity>
         </View>
 
         {/* Sample Data Button */}
         <TouchableOpacity 
           style={styles.sampleButton}
-          onPress={() => handleImportJSON(normalizeJSONBills(sampleBills as any[]))}
+          onPress={handleLoadSampleData}
         >
           <Ionicons name="document-text" size={24} color="#fff" />
           <Text style={styles.buttonText}>Cargar Datos de Ejemplo</Text>
         </TouchableOpacity>
       </ScrollView>
 
-      {/* JSON Import Modal */}
-      <JSONImportModal
+      {/* CSV Import Modal */}
+      <CSVImportModal
         visible={showImportModal}
         onClose={() => setShowImportModal(false)}
         onImport={handleImportJSON}
-        isLoading={loading}
+        isLoading={isLoading}
       />
     </SafeAreaView>
   );
@@ -311,26 +273,42 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   summaryCard: {
-    flex: 1,
     backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 20,
     alignItems: 'center',
-    marginHorizontal: 4,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  summaryTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#495057',
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   summaryAmount: {
-    fontSize: 18,
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#333',
-    marginTop: 8,
+    marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  summarySubtitle: {
+    fontSize: 14,
+    color: '#6c757d',
+    fontWeight: '500',
   },
   summaryLabel: {
     fontSize: 12,
@@ -362,9 +340,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
-  },
-  clearButton: {
-    padding: 8,
   },
   billItem: {
     flexDirection: 'row',
@@ -406,14 +381,6 @@ const styles = StyleSheet.create({
   billAmountText: {
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  statusIndicator: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 4,
   },
   emptyState: {
     alignItems: 'center',

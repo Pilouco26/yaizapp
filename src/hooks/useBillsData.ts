@@ -3,8 +3,8 @@ import { Bill } from '../utils/types';
 
 type SummaryStats = {
   totalBills: number;
-  totalPaid: number;
-  totalUnpaid: number;
+  totalPositive: number;
+  totalNegative: number;
   totalCount: number;
 };
 
@@ -35,35 +35,24 @@ export const useBillsData = () => {
   };
 
   /**
-   * Alterna el estado de pago de la factura indicada
-   */
-  const toggleBillPayment = (billId: string) => {
-    setBills(prev =>
-      prev.map(b =>
-        b.id === billId ? { ...b, isPaid: !b.isPaid } : b
-      )
-    );
-  };
-
-  /**
    * Devuelve estadísticas de resumen para las tarjetas del header
    */
   const getSummaryStats = (): SummaryStats => {
     const totalBills = bills.reduce((acc, b) => acc + b.amount, 0);
-    const totalPaid = bills
-      .filter(b => b.isPaid)
+    const totalPositive = bills
+      .filter(b => b.amount >= 0)
       .reduce((acc, b) => acc + b.amount, 0);
-    const totalUnpaid = totalBills - totalPaid;
+    const totalNegative = bills
+      .filter(b => b.amount < 0)
+      .reduce((acc, b) => acc + Math.abs(b.amount), 0);
 
     return {
       totalBills,
-      totalPaid,
-      totalUnpaid,
+      totalPositive,
+      totalNegative,
       totalCount: bills.length,
     };
   };
-
-  const clearBills = () => setBills([]);
 
   // De momento asumimos conexión OK siempre; mantener firma usada por BillsScreen
   const isConnected = true;
@@ -74,8 +63,6 @@ export const useBillsData = () => {
     error,
     isConnected,
     processJSONData,
-    toggleBillPayment,
     getSummaryStats,
-    clearBills,
   };
 };
