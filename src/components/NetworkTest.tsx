@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { API_CONFIG, getFullApiUrl, getCurrentNetworkInfo } from '../utils/config';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface NetworkTestProps {
   onTestComplete?: (success: boolean) => void;
@@ -13,6 +14,7 @@ interface TestResult {
 }
 
 const NetworkTest: React.FC<NetworkTestProps> = ({ onTestComplete }) => {
+  const { colors } = useTheme();
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [currentApiUrl, setCurrentApiUrl] = useState<string>('');

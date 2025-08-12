@@ -47,8 +47,6 @@ const CustomButton: React.FC<CustomButtonProps> = ({
         return {
           ...baseStyle,
           backgroundColor: 'transparent',
-          borderWidth: 2,
-          borderColor: disabled ? '#ccc' : '#f4511e',
         };
       default:
         return baseStyle;

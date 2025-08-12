@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { JSONBillData } from '../utils/types';
 import { uploadBills } from '../services/BillsService';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface CSVImportModalProps {
   visible: boolean;
@@ -27,6 +28,7 @@ const CSVImportModal: React.FC<CSVImportModalProps> = ({
   onImport,
   isLoading = false,
 }) => {
+  const { colors } = useTheme();
   const [selectedFile, setSelectedFile] = useState<DocumentPicker.DocumentPickerResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -218,30 +220,30 @@ const CSVImportModal: React.FC<CSVImportModalProps> = ({
       presentationStyle="pageSheet"
       onRequestClose={handleClose}
     >
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: colors.card }]}>
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-            <Ionicons name="close" size={24} color="#333" />
+            <Ionicons name="close" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Importar Facturas CSV</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Importar Facturas CSV</Text>
           <View style={styles.placeholder} />
         </View>
 
         <ScrollView style={styles.content}>
           {/* Instructions */}
-          <View style={styles.instructionsContainer}>
-            <Text style={styles.instructionsTitle}>Formato CSV</Text>
-            <Text style={styles.instructionsText}>
+          <View style={[styles.instructionsContainer, { backgroundColor: colors.card }]}>
+            <Text style={[styles.instructionsTitle, { color: colors.textPrimary }]}>Formato CSV</Text>
+            <Text style={[styles.instructionsText, { color: colors.textSecondary }]}>
               Selecciona un archivo CSV con el siguiente formato:
             </Text>
-            <Text style={styles.codeExample}>
+            <Text style={[styles.codeExample, { backgroundColor: colors.surface, color: colors.textPrimary }]}>
               {`fecha,descripcion,valor
 2024-01-15,Electricidad,-85.50
 2024-01-20,Internet,-59.99
 2024-01-25,Telefono,-45.00`}
             </Text>
-            <Text style={styles.instructionsNote}>
+            <Text style={[styles.instructionsNote, { color: colors.textSecondary }]}>
               • Los valores negativos indican facturas pagadas{'\n'}
               • Los valores positivos indican facturas sin pagar{'\n'}
               • Formato de fecha: AAAA-MM-DD{'\n'}
@@ -251,44 +253,50 @@ const CSVImportModal: React.FC<CSVImportModalProps> = ({
           </View>
 
           {/* File Selection */}
-          <View style={styles.fileContainer}>
-            <Text style={styles.fileLabel}>Archivo CSV</Text>
+          <View style={[styles.fileContainer, { backgroundColor: colors.card }]}>
+            <Text style={[styles.fileLabel, { color: colors.textPrimary }]}>Archivo CSV</Text>
             <TouchableOpacity 
-              style={styles.fileButton} 
+              style={[styles.fileButton, { backgroundColor: colors.surface }]} 
               onPress={pickDocument}
               disabled={isLoading || isProcessing}
             >
-              <Ionicons name="document" size={20} color="#2196F3" />
-              <Text style={styles.fileButtonText}>Seleccionar Archivo CSV</Text>
+              <Ionicons name="document" size={20} color={colors.primary} />
+              <Text style={[styles.fileButtonText, { color: colors.primary }]}>Seleccionar Archivo CSV</Text>
             </TouchableOpacity>
             
             {selectedFile && (
-              <View style={styles.selectedFileContainer}>
-                <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
-                <Text style={styles.selectedFileName}>{getFileName()}</Text>
+              <View style={[styles.selectedFileContainer, { backgroundColor: colors.success + '20' }]}>
+                <Ionicons name="checkmark-circle" size={20} color={colors.success} />
+                <Text style={[styles.selectedFileName, { color: colors.success }]}>{getFileName()}</Text>
               </View>
             )}
           </View>
 
           {/* Error Display */}
           {error && (
-            <View style={styles.errorContainer}>
-              <Ionicons name="alert-circle" size={16} color="#F44336" />
-              <Text style={styles.errorText}>{error}</Text>
+            <View style={[styles.errorContainer, { backgroundColor: colors.error + '20' }]}>
+              <Ionicons name="alert-circle" size={16} color={colors.error} />
+              <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
             </View>
           )}
 
           {/* Upload Status Display */}
           {uploadStatus === 'success' && (
-            <View style={styles.successContainer}>
-              <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-              <Text style={styles.successText}>¡Facturas subidas exitosamente a la API!</Text>
+            <View style={[styles.successContainer, { backgroundColor: colors.success + '20' }]}>
+              <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+              <Text style={[styles.successText, { color: colors.success }]}>¡Facturas subidas exitosamente a la API!</Text>
             </View>
           )}
 
           {/* Import Button */}
           <TouchableOpacity
-            style={getUploadButtonStyle()}
+            style={[
+              styles.importButton,
+              { backgroundColor: colors.primary },
+              uploadStatus === 'success' && { backgroundColor: colors.success },
+              uploadStatus === 'error' && { backgroundColor: colors.error },
+              (!selectedFile || isLoading || isProcessing) && { backgroundColor: colors.textTertiary }
+            ]}
             onPress={handleImport}
             disabled={!selectedFile || isLoading || isProcessing || uploadStatus === 'success'}
           >
@@ -315,8 +323,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
   },
   closeButton: {
     padding: 8,
@@ -400,8 +406,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#2196F3',
   },
   fileButtonText: {
     color: '#2196F3',

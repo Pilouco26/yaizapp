@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -28,22 +27,12 @@
       "package": "com.yaizapp.app"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
     },
     "plugins": [
       "expo-secure-store",
-      "expo-document-picker",
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/notification-icon.png",
-          "color": "#f4511e"
-        }
-      ]
-    ],
-    "notification": {
-      "icon": "./assets/notification-icon.png",
-      "color": "#f4511e"
-    }
+      "expo-document-picker"
+    ]
   }
 }

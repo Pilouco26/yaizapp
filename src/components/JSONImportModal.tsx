@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { JSONBillData } from '../utils/types';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface JSONImportModalProps {
   visible: boolean;
@@ -25,6 +26,7 @@ const JSONImportModal: React.FC<JSONImportModalProps> = ({
   onImport,
   isLoading = false,
 }) => {
+  const { colors } = useTheme();
   const [jsonInput, setJsonInput] = useState('');
   const [error, setError] = useState<string | null>(null);
 
