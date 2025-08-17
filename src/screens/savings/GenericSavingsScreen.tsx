@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearChart from '../../components/LinearChart';
 import { ThemedView, ThemedText, ThemedTouchableOpacity, ThemedScrollView, ThemedCard } from '../../components/ThemeWrapper';
 import { EnhancedInput } from '../../components/EnhancedInput';
@@ -160,8 +161,9 @@ const GenericSavingsScreen: React.FC<GenericSavingsScreenProps> = ({
     new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount);
 
   return (
-    <ThemedView className="flex-1 pt-12">      
-      <ThemedScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 20 }}>
+    <SafeAreaView className="flex-1">
+      <ThemedView className="flex-1">
+        <ThemedScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 20 }}>
         <View className="p-5">
           {/* Header */}
           <View className="items-center mb-8">
@@ -171,68 +173,69 @@ const GenericSavingsScreen: React.FC<GenericSavingsScreenProps> = ({
             >
               <Ionicons name={headerIcon as any} size={40} color={iconColor} />
             </View>
-            <ThemedText className="text-2xl font-bold text-center">{title}</ThemedText>
-            <ThemedText className="text-base text-center mt-2" variant="secondary">{subtitle}</ThemedText>
+              <ThemedText className="text-2xl font-bold text-center">{title}</ThemedText>
+              <ThemedText className="text-base text-center mt-2" variant="secondary">{subtitle}</ThemedText>
           </View>
 
           {/* Savings Overview */}
           <View
-            className="rounded-2xl mb-6 shadow-lg shadow-black/10 p-6"
-            style={{ backgroundColor: colors.surface }}
+              className="rounded-2xl mb-6 shadow-lg shadow-black/10 p-6"
+              style={{ backgroundColor: colors.surface }}
           >
             <LinearChart
               type="progress"
               currentValue={current}
               targetValue={goal}
-              primaryColor={colors.primary}
-              secondaryColor={colors.textSecondary}
+                primaryColor={colors.primary}
+                secondaryColor={colors.textSecondary}
               title="Resumen de Ahorros"
             />
           </View>
 
           {/* Update Goal Section */}
-          <ThemedCard className="p-6 mb-6">
-            <ThemedText className="text-lg font-bold mb-4 text-center">Actualizar Objetivo</ThemedText>
+            <ThemedCard className="p-6 mb-6">
+              <ThemedText className="text-lg font-bold mb-4 text-center">Actualizar Objetivo</ThemedText>
             {/* Goal */}
             <View className="mb-4">
-              <EnhancedInput
-                className="w-full text-lg"
+                <EnhancedInput
+                  className="w-full text-lg"
                 value={goalInput}
                 onChangeText={setGoalInput}
                 placeholder={goalPlaceholder}
-                label={goalPlaceholder}
+                  label={goalPlaceholder}
                 keyboardType="numeric"
               />
             </View>
             {/* Current */}
             <View className="mb-4">
-              <EnhancedInput
-                className="w-full text-lg"
+                <EnhancedInput
+                  className="w-full text-lg"
                 value={currentInput}
                 onChangeText={setCurrentInput}
                 placeholder={currentPlaceholder}
-                label={currentPlaceholder}
+                  label={currentPlaceholder}
                 keyboardType="numeric"
               />
             </View>
             {/* Button */}
-            <ThemedTouchableOpacity
+              <ThemedTouchableOpacity
               className={`w-full py-4 rounded-xl shadow-md shadow-black/20 ${isUpdatingGoal ? 'opacity-70' : ''}`}
-              variant="primary"
+                variant="primary"
               onPress={handleUpdateGoal}
               disabled={isUpdatingGoal}
             >
-              <ThemedText className="text-center text-lg font-bold" style={{ color: '#ffffff' }}>
+                <ThemedText className="text-center text-lg font-bold" style={{ color: '#ffffff' }}>
                 {isUpdatingGoal ? 'Actualizando...' : 'Actualizar Objetivo'}
-              </ThemedText>
-            </ThemedTouchableOpacity>
-          </ThemedCard>
+                </ThemedText>
+              </ThemedTouchableOpacity>
+            </ThemedCard>
 
           {/* Extra content provided by wrapper screens */}
           {children}
         </View>
-      </ThemedScrollView>
-    </ThemedView>
+        </ThemedScrollView>
+      </ThemedView>
+    </SafeAreaView>
   );
 };
 

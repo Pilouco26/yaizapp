@@ -66,9 +66,9 @@ export const lightTheme: ThemeColors = {
   borderSecondary: 'transparent',
   
   // Status colors
-  success: '#0ea5e9',
-  warning: '#0ea5e9',
-  error: '#0ea5e9',
+  success: '#22c55e',
+  warning: '#f59e0b',
+  error: '#ef4444',
   
   // Primary colors (blue variants)
   primary: '#0ea5e9',
@@ -109,9 +109,9 @@ export const darkTheme: ThemeColors = {
   borderSecondary: 'transparent',
   
   // Status colors
-  success: '#0ea5e9',
-  warning: '#0ea5e9',
-  error: '#0ea5e9',
+  success: '#4ade80',
+  warning: '#fbbf24',
+  error: '#f87171',
   
   // Primary colors (blue variants)
   primary: '#38bdf8',

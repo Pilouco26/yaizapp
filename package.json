@@ -4,28 +4,24 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.1.2",
     "@react-navigation/bottom-tabs": "^7.4.5",
     "@react-navigation/native": "^7.1.17",
-    "@react-navigation/native-stack": "^7.3.24",
-    "expo": "~53.0.20",
+    "expo": "^53.0.20",
+    "expo-auth-session": "~6.2.1",
     "expo-document-picker": "^13.1.6",
     "expo-secure-store": "~14.2.3",
     "expo-status-bar": "~2.2.3",
     "nativewind": "^4.1.23",
     "react": "19.0.0",
     "react-native": "0.79.5",
-    "react-native-gesture-handler": "~2.24.0",
-    "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "5.4.0",
-    "react-native-screens": "~4.11.1",
     "react-native-svg": "15.11.2",
-    "react-native-chart-kit": "^6.12.0",
     "tailwindcss": "^3.4.17"
   },
   "devDependencies": {
@@ -33,6 +29,56 @@
     "@types/react": "~19.0.10",
     "@types/tailwindcss": "^3.0.11",
     "typescript": "~5.8.3"
+  },
+  "overrides": {
+    "glob": "10.4.5",
+    "rimraf": "5.0.10",
+    "inflight": "2.0.0",
+    "@react-native/codegen": {
+      "glob": "10.4.5"
+    },
+    "babel-plugin-istanbul": {
+      "test-exclude": {
+        "glob": "10.4.5"
+      }
+    },
+    "chromium-edge-launcher": {
+      "rimraf": "5.0.10"
+    },
+    "test-exclude": {
+      "glob": "10.4.5"
+    },
+    "react-native": {
+      "glob": "10.4.5",
+      "@react-native/codegen": {
+        "glob": "10.4.5"
+      }
+    }
+  },
+  "resolutions": {
+    "glob": "10.4.5",
+    "rimraf": "5.0.10",
+    "inflight": "2.0.0",
+    "@react-native/codegen": {
+      "glob": "10.4.5"
+    },
+    "babel-plugin-istanbul": {
+      "test-exclude": {
+        "glob": "10.4.5"
+      }
+    },
+    "chromium-edge-launcher": {
+      "rimraf": "5.0.10"
+    },
+    "test-exclude": {
+      "glob": "10.4.5"
+    },
+    "react-native": {
+      "glob": "10.4.5",
+      "@react-native/codegen": {
+        "glob": "10.4.5"
+      }
+    }
   },
   "private": true
 }

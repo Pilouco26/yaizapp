@@ -5,6 +5,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearChart, { ChartDataPoint } from '../../components/LinearChart';
 import { ThemedView, ThemedText, ThemedTouchableOpacity, ThemedCard } from '../../components/ThemeWrapper';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -122,7 +123,7 @@ const SavingsScreen: React.FC = () => {
             <ThemedText style={styles.statValue}>{formatEuros(6000)}</ThemedText>
             <View style={styles.trendContainer}>
               <Ionicons name="trending-up" size={16} color={secondaryColor} />
-              <ThemedText style={[styles.trendText, { color: secondaryColor }]}>+16.7%</ThemedText>
+              <ThemedText style={[styles.trendText, { color: secondaryColor }]}>+18.2%</ThemedText>
             </View>
           </ThemedView>
           
@@ -131,7 +132,7 @@ const SavingsScreen: React.FC = () => {
             <ThemedText style={styles.statValue}>{formatEuros(800)}</ThemedText>
             <View style={styles.trendContainer}>
               <Ionicons name="trending-up" size={16} color={secondaryColor} />
-              <ThemedText style={[styles.trendText, { color: secondaryColor }]}>+16.7%</ThemedText>
+              <ThemedText style={[styles.trendText, { color: secondaryColor }]}>+20.0%</ThemedText>
             </View>
           </ThemedView>
         </View>
@@ -151,70 +152,71 @@ const SavingsScreen: React.FC = () => {
   );
 
   return (
-    <ThemedView style={styles.container}>
+    <SafeAreaView className="flex-1">
+      <ThemedView className="flex-1">
       {/* Tab Header --------------------------------------------------------- */}
-      <ThemedView style={styles.tabHeader} variant="card">
-        <ThemedTouchableOpacity
-          style={[
-            styles.tabButton,
-            activeTab === 'solo' && { backgroundColor: primaryColor }
-          ]}
+        <ThemedView style={styles.tabHeader} variant="card">
+          <ThemedTouchableOpacity
+            style={[
+              styles.tabButton,
+              activeTab === 'solo' && { backgroundColor: primaryColor }
+            ]}
           onPress={() => setActiveTab('solo')}
         >
           <Ionicons
             name="person"
             size={20}
-            color={activeTab === 'solo' ? '#ffffff' : primaryColor}
+              color={activeTab === 'solo' ? '#ffffff' : primaryColor}
           />
-          <ThemedText
-            style={[
-              styles.tabText,
-              {
-                color: activeTab === 'solo' ? '#ffffff' : primaryColor,
-                fontWeight: activeTab === 'solo' ? 'bold' : '600',
-              }
-            ]}
+            <ThemedText
+              style={[
+                styles.tabText,
+                {
+                  color: activeTab === 'solo' ? '#ffffff' : primaryColor,
+                  fontWeight: activeTab === 'solo' ? 'bold' : '600',
+                }
+              ]}
           >
             Solo
-          </ThemedText>
-        </ThemedTouchableOpacity>
+            </ThemedText>
+          </ThemedTouchableOpacity>
 
-        <ThemedTouchableOpacity
-          style={[
-            styles.tabButton,
-            activeTab === 'familia' && { backgroundColor: secondaryColor }
-          ]}
+          <ThemedTouchableOpacity
+            style={[
+              styles.tabButton,
+              activeTab === 'familia' && { backgroundColor: secondaryColor }
+            ]}
           onPress={() => setActiveTab('familia')}
         >
           <Ionicons
             name="people"
             size={20}
-            color={activeTab === 'familia' ? '#ffffff' : secondaryColor}
+              color={activeTab === 'familia' ? '#ffffff' : secondaryColor}
           />
-          <ThemedText
-            style={[
-              styles.tabText,
-              {
-                color: activeTab === 'familia' ? '#ffffff' : secondaryColor,
-                fontWeight: activeTab === 'familia' ? 'bold' : '600',
-              }
-            ]}
+            <ThemedText
+              style={[
+                styles.tabText,
+                {
+                  color: activeTab === 'familia' ? '#ffffff' : secondaryColor,
+                  fontWeight: activeTab === 'familia' ? 'bold' : '600',
+                }
+              ]}
           >
             Familia
-          </ThemedText>
-        </ThemedTouchableOpacity>
-      </ThemedView>
+            </ThemedText>
+          </ThemedTouchableOpacity>
+        </ThemedView>
 
       {/* Tab Content -------------------------------------------------------- */}
       {activeTab === 'solo' ? renderSoloContent() : renderFamiliaContent()}
-    </ThemedView>
+      </ThemedView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 48,
   },
   tabHeader: {
     flexDirection: 'row',

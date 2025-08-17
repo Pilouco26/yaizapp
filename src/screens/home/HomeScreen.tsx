@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity, Alert, TextInput, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useObjective } from '../../hooks/useObjective';
 import { formatCurrency } from '../../utils/helpers';
 import { ThemedView, ThemedText, ThemedTouchableOpacity, ThemedScrollView, ThemedCard } from '../../components/ThemeWrapper';
@@ -52,68 +53,16 @@ const HomeScreen: React.FC = () => {
   };
 
   return (
-    <ThemedView className="flex-1 pt-12">
-      <ThemedScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 20 }}>
-        <View className="flex-1 items-center p-5">
-          {/* Objective Section */}
-          <ThemedCard className="w-full items-center mb-10 p-6">
-            <ThemedText className="text-xl font-bold mb-4 uppercase tracking-wide">
-              Objetivo del Mes
-            </ThemedText>
-            <ThemedText className="text-5xl font-bold text-center mb-6" style={{ color: colors.primary }}>
-              {formatCurrency(objectiveAmount)}
-            </ThemedText>
-            
-            {/* Input Section */}
-            <View className="w-full mb-6">
-              <ThemedText className="text-base font-semibold mb-3 text-center">
-                Establecer nuevo objetivo:
-              </ThemedText>
-              <View className="flex-row items-center">
-                <TouchableOpacity 
-                  className={`flex-1 rounded-full shadow-md shadow-black/20 ${
-                    isUpdatingObjective ? 'opacity-70' : ''
-                  }`}
-                  style={{ backgroundColor: isUpdatingObjective ? colors.textSecondary : colors.primary }}
-                  onPress={handleUpdateObjective}
-                  disabled={isUpdatingObjective}
-                >
-                  <View className="flex-row items-center p-4">
-                    <EnhancedInput
-                      className="flex-1 border-0"
-                      value={objectiveInput}
-                      onChangeText={setObjectiveInput}
-                      placeholder="Ingresa el monto objetivo"
-                      keyboardType="numeric"
-                      returnKeyType="done"
-                      onSubmitEditing={handleUpdateObjective}
-                      style={{
-                        backgroundColor: 'transparent',
-                        borderWidth: 0,
-                        paddingHorizontal: 0,
-                        paddingVertical: 0,
-                        color: '#ffffff',
-                        fontSize: 16,
-                        fontWeight: '500',
-                      }}
-                      placeholderTextColor="rgba(255, 255, 255, 0.7)"
-                    />
-                    <Ionicons 
-                      name={isUpdatingObjective ? "hourglass" : "checkmark"} 
-                      size={20} 
-                      color="#ffffff" 
-                    />
-                  </View>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Total Available Amount */}
-            <ThemedCard className="items-center mb-6 p-5 w-full">
+    <SafeAreaView className="flex-1">
+      <ThemedView className="flex-1">
+        <ThemedScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 20 }}>
+          <View className="flex-1 items-center p-5">
+            {/* Total Available Amount - Main Focus */}
+            <ThemedCard className="w-full items-center mb-6 p-6">
               <ThemedText className="text-lg font-semibold mb-2 uppercase tracking-wide">
-                Total Disponible:
+                Total Disponible
               </ThemedText>
-              <ThemedText className="text-3xl font-bold mb-1">
+              <ThemedText className="text-6xl font-bold text-center mb-4" style={{ color: colors.primary }}>
                 {formatCurrency(totalAvailable)}
               </ThemedText>
               
@@ -141,6 +90,60 @@ const HomeScreen: React.FC = () => {
                   </ThemedText>
                 </View>
               </ThemedView>
+            </ThemedCard>
+
+            {/* Objective Section - Smaller and Below */}
+            <ThemedCard className="w-full items-center mb-6 p-5">
+              <ThemedText className="text-base font-bold mb-3 uppercase tracking-wide">
+                Objetivo del Mes
+              </ThemedText>
+              <ThemedText className="text-2xl font-bold text-center mb-4" style={{ color: colors.primary }}>
+                {formatCurrency(objectiveAmount)}
+              </ThemedText>
+              
+              {/* Input Section */}
+              <View className="w-full mb-4">
+                <ThemedText className="text-sm font-semibold mb-2 text-center">
+                  Establecer nuevo objetivo:
+                </ThemedText>
+                <View className="flex-row items-center">
+                  <TouchableOpacity 
+                    className={`flex-1 rounded-full shadow-md shadow-black/20 ${
+                      isUpdatingObjective ? 'opacity-70' : ''
+                    }`}
+                    style={{ backgroundColor: isUpdatingObjective ? colors.textSecondary : colors.primary }}
+                    onPress={handleUpdateObjective}
+                    disabled={isUpdatingObjective}
+                  >
+                    <View className="flex-row items-center p-3">
+                      <EnhancedInput
+                        className="flex-1 border-0"
+                        value={objectiveInput}
+                        onChangeText={setObjectiveInput}
+                        placeholder="Ingresa el monto objetivo"
+                        keyboardType="numeric"
+                        returnKeyType="done"
+                        onSubmitEditing={handleUpdateObjective}
+                        style={{
+                          backgroundColor: 'transparent',
+                          borderWidth: 0,
+                          paddingHorizontal: 0,
+                          paddingVertical: 0,
+                          color: '#ffffff',
+                          fontSize: 14,
+                          fontWeight: '500',
+                        }}
+                        placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                      />
+                      <Ionicons 
+                        name={isUpdatingObjective ? "hourglass" : "checkmark"} 
+                        size={18} 
+                        color="#ffffff" 
+                      />
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </ThemedCard>
 
             {/* Bills Summary */}
@@ -174,10 +177,10 @@ const HomeScreen: React.FC = () => {
                 {isRefreshingBills ? 'Actualizando...' : 'Actualizar Facturas'}
               </ThemedText>
             </ThemedTouchableOpacity>
-          </ThemedCard>
-        </View>
-      </ThemedScrollView>
-    </ThemedView>
+          </View>
+        </ThemedScrollView>
+      </ThemedView>
+    </SafeAreaView>
   );
 };
 

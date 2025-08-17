@@ -121,24 +121,10 @@ export const ThemedTouchableOpacity: React.FC<{
     }
   };
 
-  // Automatically set text color to white for colored button variants
-  const getTextColor = () => {
-    switch (variant) {
-      case 'primary':
-      case 'secondary':
-      case 'success':
-      case 'warning':
-      case 'error':
-        return '#ffffff'; // White text for colored backgrounds
-      default:
-        return colors.textPrimary; // Default text color for surface variant
-    }
-  };
-
   return (
     <TouchableOpacity
       className={className}
-      style={[getButtonStyle(), { color: getTextColor() }, style]}
+      style={[getButtonStyle(), style]}
       {...props}
     >
       {children}

@@ -1,5 +1,47 @@
 import { Platform } from 'react-native';
 import { NETWORK_CONFIGS, COMMON_FALLBACK_IPS, NetworkConfig } from './networkConfigs';
+import * as AuthSession from 'expo-auth-session';
+
+// Global IP address for OAuth redirect URIs
+let currentIPAddress = '172.20.10.2'; // Default fallback
+
+// Function to get the current IP address
+export const getCurrentIPAddress = (): string => {
+  return currentIPAddress;
+};
+
+// Function to set the current IP address
+export const setCurrentIPAddress = (ip: string): void => {
+  currentIPAddress = ip;
+  console.log('OAuth IP Address set to:', ip);
+};
+
+// Function to get the OAuth redirect URI with current IP
+export const getOAuthRedirectURI = (): string => {
+  // For Expo Go development, use localhost redirect URI
+  // This is the most reliable approach for development
+  const redirectURI = __DEV__ 
+    ? 'http://localhost:8081/oauth/callback'
+    : 'com.yaizapp.app://oauth/callback';
+  
+  console.log('OAuth Redirect URI for environment:', __DEV__ ? 'development' : 'production');
+  console.log('OAuth Redirect URI:', redirectURI);
+  return redirectURI;
+};
+
+// Function to detect IP address (for future use)
+export const detectIPAddress = async (): Promise<string> => {
+  try {
+    // For now, we'll use the known IP address
+    // In a production app, you might want to detect this dynamically
+    const ip = '172.20.10.2';
+    setCurrentIPAddress(ip);
+    return ip;
+  } catch (error) {
+    console.error('Error detecting IP address:', error);
+    return currentIPAddress;
+  }
+};
 
 /**
  * Detects which network configuration is currently working
