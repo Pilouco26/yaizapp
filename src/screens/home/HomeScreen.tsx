@@ -53,10 +53,17 @@ const HomeScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1">
-      <ThemedView className="flex-1">
-        <ThemedScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 20 }}>
-          <View className="flex-1 items-center p-5">
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <ThemedView style={{ flex: 1 }}>
+        <ThemedScrollView 
+          style={{ flex: 1 }} 
+          contentContainerStyle={{ 
+            paddingBottom: 0,
+            flexGrow: 1 
+          }}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={{ flex: 1, alignItems: 'center', padding: 20 }}>
             {/* Total Available Amount - Main Focus */}
             <ThemedCard className="w-full items-center mb-6 p-6">
               <ThemedText className="text-lg font-semibold mb-2 uppercase tracking-wide">

@@ -93,94 +93,93 @@ const ProfileScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1">
-      <ThemedView className="flex-1">
-      <View className="flex-1 items-center justify-center p-5">
-        <View className="items-center mb-10">
-            <View 
-              className="w-24 h-24 rounded-full items-center justify-center mb-4"
-              style={{ backgroundColor: getProviderColor() + '20' }}
-            >
-              <Ionicons name={getProviderIcon() as any} size={48} color={getProviderColor()} />
-          </View>
-            <ThemedText className="text-2xl font-bold mb-2">
-              {user?.name || 'Usuario'}
-            </ThemedText>
-            <ThemedText className="text-base" variant="secondary">
-              {user?.email || 'usuario@example.com'}
-            </ThemedText>
-            <ThemedText className="text-sm mt-1" variant="tertiary">
-              Conectado con {getProviderName()}
-            </ThemedText>
-        </View>
-        
-        <View className="w-full max-w-sm">
-            {/* Theme Toggle Button */}
-            <ThemedTouchableOpacity 
-              className="flex-row items-center p-4 rounded-xl mb-3"
-              onPress={toggleTheme}
-            >
-              <Ionicons 
-                name={theme === 'light' ? 'moon' : 'sunny'} 
-                size={24} 
-                color={theme === 'light' ? colors.textSecondary : colors.primary} 
-              />
-              <ThemedText className="text-base ml-3 font-medium">
-                {theme === 'light' ? 'Modo Oscuro' : 'Modo Claro'}
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <ThemedView style={{ flex: 1 }}>
+        <View className="flex-1 items-center justify-center p-5">
+          <View className="items-center mb-10">
+              <View 
+                className="w-24 h-24 rounded-full items-center justify-center mb-4"
+                style={{ backgroundColor: getProviderColor() + '20' }}
+              >
+                <Ionicons name={getProviderIcon() as any} size={48} color={getProviderColor()} />
+            </View>
+              <ThemedText className="text-2xl font-bold mb-2">
+                {user?.name || 'Usuario'}
               </ThemedText>
-              <Ionicons 
-                name="chevron-forward" 
-                size={20} 
-                color={colors.textTertiary} 
-                className="ml-auto" 
-              />
-            </ThemedTouchableOpacity>
+              <ThemedText className="text-base" variant="secondary">
+                {user?.email || 'usuario@example.com'}
+              </ThemedText>
+              <ThemedText className="text-sm mt-1" variant="tertiary">
+                Conectado con {getProviderName()}
+              </ThemedText>
+          </View>
+          
+          <View className="w-full max-w-sm">
+              {/* Theme Toggle Button */}
+              <ThemedTouchableOpacity 
+                className="flex-row items-center p-4 rounded-xl mb-3"
+                onPress={toggleTheme}
+              >
+                <Ionicons 
+                  name={theme === 'light' ? 'moon' : 'sunny'} 
+                  size={24} 
+                  color={theme === 'light' ? colors.textSecondary : colors.primary} 
+                />
+                <ThemedText className="text-base ml-3 font-medium">
+                  {theme === 'light' ? 'Modo Oscuro' : 'Modo Claro'}
+                </ThemedText>
+                <Ionicons 
+                  name="chevron-forward" 
+                  size={20} 
+                  color={colors.textTertiary} 
+                  className="ml-auto" 
+                />
+              </ThemedTouchableOpacity>
+              
+              <ThemedTouchableOpacity 
+                className="flex-row items-center p-4 rounded-xl mb-3"
+              >
+                <Ionicons name="settings" size={24} color={colors.textSecondary} />
+                <ThemedText className="text-base ml-3 font-medium">
+                Configuración
+                </ThemedText>
+                <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} className="ml-auto" />
+              </ThemedTouchableOpacity>
             
-            <ThemedTouchableOpacity 
-              className="flex-row items-center p-4 rounded-xl mb-3"
-            >
-              <Ionicons name="settings" size={24} color={colors.textSecondary} />
-              <ThemedText className="text-base ml-3 font-medium">
-              Configuración
-              </ThemedText>
-              <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} className="ml-auto" />
-            </ThemedTouchableOpacity>
-          
-            <ThemedTouchableOpacity 
-              className="flex-row items-center p-4 rounded-xl mb-3"
-            >
-              <Ionicons name="help-circle" size={24} color={colors.textSecondary} />
-              <ThemedText className="text-base ml-3 font-medium">
-              Ayuda
-              </ThemedText>
-              <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} className="ml-auto" />
-            </ThemedTouchableOpacity>
-          
-            <ThemedTouchableOpacity 
-              className="flex-row items-center p-4 rounded-xl mb-3"
-            >
-              <Ionicons name="information-circle" size={24} color={colors.textSecondary} />
-              <ThemedText className="text-base ml-3 font-medium">
-              Acerca de
-              </ThemedText>
-              <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} className="ml-auto" />
-            </ThemedTouchableOpacity>
-          
-            <ThemedTouchableOpacity 
-              className="flex-row items-center p-4 rounded-xl"
-              style={{ 
-                backgroundColor: colors.error,
-                borderColor: colors.error
-              }}
-              onPress={handleLogout}
-            >
-              <Ionicons name="log-out" size={24} color="#ffffff" />
-              <ThemedText className="text-base ml-3 font-medium text-white">
-              Cerrar Sesión
-              </ThemedText>
-            </ThemedTouchableOpacity>
+              <ThemedTouchableOpacity 
+                className="flex-row items-center p-4 rounded-xl mb-3"
+              >
+                <Ionicons name="help-circle" size={24} color={colors.textSecondary} />
+                <ThemedText className="text-base ml-3 font-medium">
+                Ayuda
+                </ThemedText>
+                <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} className="ml-auto" />
+              </ThemedTouchableOpacity>
+            
+              <ThemedTouchableOpacity 
+                className="flex-row items-center p-4 rounded-xl mb-3"
+              >
+                <Ionicons name="information-circle" size={24} color={colors.textSecondary} />
+                <ThemedText className="text-base ml-3 font-medium">
+                Acerca de
+                </ThemedText>
+              </ThemedTouchableOpacity>
+            
+              <ThemedTouchableOpacity 
+                className="flex-row items-center p-4 rounded-xl"
+                style={{ 
+                  backgroundColor: colors.error,
+                  borderColor: colors.error
+                }}
+                onPress={handleLogout}
+              >
+                <Ionicons name="log-out" size={24} color="#ffffff" />
+                <ThemedText className="text-base ml-3 font-medium text-white">
+                Cerrar Sesión
+                </ThemedText>
+              </ThemedTouchableOpacity>
+            </View>
           </View>
-        </View>
       </ThemedView>
     </SafeAreaView>
   );

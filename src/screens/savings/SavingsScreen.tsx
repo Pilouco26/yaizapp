@@ -44,7 +44,7 @@ const familiaSavingsData: ChartDataPoint[] = [
 
 const SavingsScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('familia');
-  const { theme } = useTheme();
+  const { theme, colors } = useTheme();
 
   // Theme-aware colors
   const primaryColor = theme === 'light' ? PRIMARY_COLOR_LIGHT : PRIMARY_COLOR_DARK;
@@ -152,63 +152,63 @@ const SavingsScreen: React.FC = () => {
   );
 
   return (
-    <SafeAreaView className="flex-1">
-      <ThemedView className="flex-1">
-      {/* Tab Header --------------------------------------------------------- */}
-        <ThemedView style={styles.tabHeader} variant="card">
-          <ThemedTouchableOpacity
-            style={[
-              styles.tabButton,
-              activeTab === 'solo' && { backgroundColor: primaryColor }
-            ]}
-          onPress={() => setActiveTab('solo')}
-        >
-          <Ionicons
-            name="person"
-            size={20}
-              color={activeTab === 'solo' ? '#ffffff' : primaryColor}
-          />
-            <ThemedText
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <ThemedView style={{ flex: 1 }}>
+        {/* Tab Header --------------------------------------------------------- */}
+          <ThemedView style={styles.tabHeader} variant="card">
+            <ThemedTouchableOpacity
               style={[
-                styles.tabText,
-                {
-                  color: activeTab === 'solo' ? '#ffffff' : primaryColor,
-                  fontWeight: activeTab === 'solo' ? 'bold' : '600',
-                }
+                styles.tabButton,
+                activeTab === 'solo' && { backgroundColor: primaryColor }
               ]}
+            onPress={() => setActiveTab('solo')}
           >
-            Solo
-            </ThemedText>
-          </ThemedTouchableOpacity>
+            <Ionicons
+              name="person"
+              size={20}
+                color={activeTab === 'solo' ? '#ffffff' : primaryColor}
+            />
+              <ThemedText
+                style={[
+                  styles.tabText,
+                  {
+                    color: activeTab === 'solo' ? '#ffffff' : primaryColor,
+                    fontWeight: activeTab === 'solo' ? 'bold' : '600',
+                  }
+                ]}
+            >
+              Solo
+              </ThemedText>
+            </ThemedTouchableOpacity>
 
-          <ThemedTouchableOpacity
-            style={[
-              styles.tabButton,
-              activeTab === 'familia' && { backgroundColor: secondaryColor }
-            ]}
-          onPress={() => setActiveTab('familia')}
-        >
-          <Ionicons
-            name="people"
-            size={20}
-              color={activeTab === 'familia' ? '#ffffff' : secondaryColor}
-          />
-            <ThemedText
+            <ThemedTouchableOpacity
               style={[
-                styles.tabText,
-                {
-                  color: activeTab === 'familia' ? '#ffffff' : secondaryColor,
-                  fontWeight: activeTab === 'familia' ? 'bold' : '600',
-                }
+                styles.tabButton,
+                activeTab === 'familia' && { backgroundColor: secondaryColor }
               ]}
+            onPress={() => setActiveTab('familia')}
           >
-            Familia
-            </ThemedText>
-          </ThemedTouchableOpacity>
-        </ThemedView>
+            <Ionicons
+              name="people"
+              size={20}
+                color={activeTab === 'familia' ? '#ffffff' : secondaryColor}
+            />
+              <ThemedText
+                style={[
+                  styles.tabText,
+                  {
+                    color: activeTab === 'familia' ? '#ffffff' : secondaryColor,
+                    fontWeight: activeTab === 'familia' ? 'bold' : '600',
+                  }
+                ]}
+            >
+              Familia
+              </ThemedText>
+            </ThemedTouchableOpacity>
+          </ThemedView>
 
-      {/* Tab Content -------------------------------------------------------- */}
-      {activeTab === 'solo' ? renderSoloContent() : renderFamiliaContent()}
+        {/* Tab Content -------------------------------------------------------- */}
+        {activeTab === 'solo' ? renderSoloContent() : renderFamiliaContent()}
       </ThemedView>
     </SafeAreaView>
   );

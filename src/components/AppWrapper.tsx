@@ -6,7 +6,7 @@ import LoginScreen from '../screens/login/LoginScreen';
 import TabNavigator from '../navigation/TabNavigator';
 
 const AppWrapper: React.FC = () => {
-  const { isAuthenticated, isLoading, login, loginWithMeta } = useAuth();
+  const { isAuthenticated, isLoading, login, signup, loginWithMeta } = useAuth();
   const { colors } = useTheme();
 
   if (isLoading) {
@@ -21,6 +21,7 @@ const AppWrapper: React.FC = () => {
     return (
       <LoginScreen 
         onLogin={login} 
+        onSignup={signup}
         onMetaLogin={loginWithMeta}
         isLoading={isLoading} 
       />

@@ -5,7 +5,8 @@ import { OAuthUser } from '../services/OAuthService';
 interface AuthContextType {
   isAuthenticated: boolean;
   user: OAuthUser | null;
-  login: () => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (name: string, email: string, password: string) => Promise<void>;
   loginWithMeta: () => Promise<void>;
   logout: () => Promise<void>;
   isLoading: boolean;
@@ -52,17 +53,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const login = async () => {
+  const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      // Simulate API call delay for direct login
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Simulate API call delay for login
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Create a mock user for direct login
+      // For demo purposes, accept any valid email/password combination
+      if (!email || !password) {
+        throw new Error('Email y contraseña son requeridos');
+      }
+      
+      // Create a mock user for login
       const mockUser: OAuthUser = {
-        id: 'direct-user-' + Date.now(),
-        email: 'usuario@example.com',
-        name: 'Usuario Directo',
+        id: 'login-user-' + Date.now(),
+        email: email,
+        name: email.split('@')[0], // Use email prefix as name
         provider: 'direct' as const,
       };
       
@@ -75,6 +81,44 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsAuthenticated(true);
     } catch (error) {
       console.error('Login error:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signup = async (name: string, email: string, password: string) => {
+    try {
+      setIsLoading(true);
+      // Simulate API call delay for signup
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Validate input
+      if (!name || !email || !password) {
+        throw new Error('Todos los campos son requeridos');
+      }
+      
+      if (password.length < 8) {
+        throw new Error('La contraseña debe tener al menos 8 caracteres');
+      }
+      
+      // Create a mock user for signup
+      const mockUser: OAuthUser = {
+        id: 'signup-user-' + Date.now(),
+        email: email,
+        name: name,
+        provider: 'direct' as const,
+      };
+      
+      // Store authentication status and user data
+      await AsyncStorage.setItem('auth_status', 'authenticated');
+      await AsyncStorage.setItem('auth_provider', 'direct');
+      await AsyncStorage.setItem('user_data', JSON.stringify(mockUser));
+      
+      setUser(mockUser);
+      setIsAuthenticated(true);
+    } catch (error) {
+      console.error('Signup error:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -125,6 +169,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isAuthenticated,
     user,
     login,
+    signup,
     loginWithMeta,
     logout,
     isLoading,
