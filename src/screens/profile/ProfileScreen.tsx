@@ -6,11 +6,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { ThemedView, ThemedText, ThemedTouchableOpacity } from '../../components/ThemeWrapper';
+import { UsersService } from '../../services';
+import { user_id } from '../../config/constants';
+import { User as ApiUser } from '../../services/types';
 
 const ProfileScreen: React.FC = () => {
   const { colors, theme, toggleTheme } = useTheme();
   const { logout, user } = useAuth();
   const [authProvider, setAuthProvider] = useState<string>('direct');
+  const [apiUser, setApiUser] = useState<ApiUser | null>(null);
 
   useEffect(() => {
     // Get the authentication provider
@@ -28,11 +32,25 @@ const ProfileScreen: React.FC = () => {
     getAuthProvider();
   }, []);
 
+  useEffect(() => {
+    // Fetch user data from API (id = 1)
+    const fetchUserData = async () => {
+      try {
+        const users = await UsersService.searchUsers({ id: user_id });
+        if (users.length > 0) {
+          setApiUser(users[0]);
+        } else {
+        }
+      } catch (error) {
+        console.error('❌ [ProfileScreen] Error fetching user data:', error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
   // Debug logging for user data
   useEffect(() => {
-    console.log('ProfileScreen - Current user data:', user);
-    console.log('ProfileScreen - User email:', user?.email);
-    console.log('ProfileScreen - User name:', user?.name);
   }, [user]);
 
   const getProviderIcon = () => {
@@ -104,10 +122,13 @@ const ProfileScreen: React.FC = () => {
                 <Ionicons name={getProviderIcon() as any} size={48} color={getProviderColor()} />
             </View>
               <ThemedText className="text-2xl font-bold mb-2">
-                {user?.name || 'Usuario'}
+                {apiUser?.name || user?.name || 'Usuario'}
               </ThemedText>
               <ThemedText className="text-base" variant="secondary">
-                {user?.email || 'usuario@example.com'}
+                {apiUser?.email || user?.email || 'usuario@example.com'}
+              </ThemedText>
+              <ThemedText className="text-sm mt-1" variant="tertiary">
+                @{apiUser?.username || 'username'}
               </ThemedText>
               <ThemedText className="text-sm mt-1" variant="tertiary">
                 Conectado con {getProviderName()}

@@ -18,6 +18,22 @@ export interface LinearChartProps {
   data?: ChartDataPoint[];
   currentValue?: number;
   targetValue?: number;
+  /**
+   * If true, the chart will render a horizontal reference line at 0 €.
+   * Defaults to true.
+   */
+  showZeroLine?: boolean;
+  /**
+   * Stroke colours for the line segments when the values are:
+   *  - above the goal (✔︎)
+   *  - between the goal and 0 (⚠︎)
+   *  - below 0 (✖︎)
+   */
+  segmentColors?: {
+    aboveGoal: string;
+    betweenGoalAndZero: string;
+    belowZero: string;
+  };
   
   // Styling
   primaryColor?: string;
@@ -84,6 +100,12 @@ const LinearChart: React.FC<LinearChartProps> = ({
   showTooltips = true,
   showGrid = true,
   showLabels = true,
+  showZeroLine = true,
+  segmentColors = {
+    aboveGoal: '#22c55e',     // Tailwind green-500
+    betweenGoalAndZero: '#eab308', // Tailwind yellow-500
+    belowZero: '#ef4444',     // Tailwind red-500
+  },
   progressPercentage,
   title,
   subtitle,
@@ -135,17 +157,47 @@ const LinearChart: React.FC<LinearChartProps> = ({
     return { xScale, yScale, minY, maxY };
   };
 
-  // Generate line chart path
-  const generateLinePath = () => {
-    if (data.length === 0) return '';
-    
+  /**
+   * Generates one small SVG path per segment so we can colour them independently
+   * depending on whether the segment is above the goal, between goal and 0 or below 0.
+   */
+  const generateSegmentPaths = () => {
+    if (data.length < 2) return [] as { path: string; colour: string }[];
     const { xScale, yScale, minY } = getChartDimensions();
-    
-    return data.map((point, index) => {
-      const x = padding + (index * xScale);
-      const y = padding + chartAreaHeight - ((point.value - minY) * yScale);
-      return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
-    }).join(' ');
+    return data.slice(0, -1).map((curr, idx) => {
+      const next = data[idx + 1];
+      const x1 = padding + idx * xScale;
+      const y1 = padding + chartAreaHeight - ((curr.value - minY) * yScale);
+      const x2 = padding + (idx + 1) * xScale;
+      const y2 = padding + chartAreaHeight - ((next.value - minY) * yScale);
+
+      // Determine colour for this segment
+      const goal = targetValue ?? 0;
+      const statusForValue = (v: number) => {
+        if (v >= goal) return 'above';
+        if (v >= 0) return 'between';
+        return 'below';
+      };
+      const status1 = statusForValue(curr.value);
+      const status2 = statusForValue(next.value);
+      // If both statuses match we pick that colour, otherwise default to yellow
+      let colour: string;
+      if (status1 === 'above' && status2 === 'above') {
+        colour = segmentColors.aboveGoal;
+      } else if (status1 === 'below' && status2 === 'below') {
+        colour = segmentColors.belowZero;
+      } else if (status1 === 'between' && status2 === 'between') {
+        colour = segmentColors.betweenGoalAndZero;
+      } else {
+        // Segment crosses thresholds – pick middle colour to indicate change
+        colour = segmentColors.betweenGoalAndZero;
+      }
+
+      return {
+        path: `M ${x1} ${y1} L ${x2} ${y2}`,
+        colour,
+      };
+    });
   };
 
   // Generate grid lines
@@ -213,6 +265,43 @@ const LinearChart: React.FC<LinearChartProps> = ({
         />
       );
     });
+  };
+
+  /** Horizontal reference lines (0 €, goal) */
+  const generateReferenceLines = () => {
+    const refs: React.ReactElement[] = [];
+    const { yScale, minY, maxY } = getChartDimensions();
+    if (showZeroLine && minY < 0 && maxY > 0) {
+      const y0 = padding + chartAreaHeight - ((0 - minY) * yScale);
+      refs.push(
+        <Line
+          key="zero-line"
+          x1={padding}
+          y1={y0}
+          x2={padding + chartAreaWidth}
+          y2={y0}
+          stroke="#6b7280" // Tailwind gray-500
+          strokeWidth={0.8}
+          strokeDasharray="6,4"
+        />
+      );
+    }
+    if (typeof targetValue === 'number') {
+      const goalY = padding + chartAreaHeight - ((targetValue - minY) * yScale);
+      refs.push(
+        <Line
+          key="goal-line"
+          x1={padding}
+          y1={goalY}
+          x2={padding + chartAreaWidth}
+          y2={goalY}
+          stroke="#0ea5e9" // cyan-ish primary
+          strokeWidth={0.8}
+          strokeDasharray="4,2"
+        />
+      );
+    }
+    return refs;
   };
 
   // Generate Y-axis labels
@@ -299,6 +388,8 @@ const LinearChart: React.FC<LinearChartProps> = ({
           
           {/* Grid lines */}
           {generateGridLines()}
+          {/* Reference lines */}
+          {generateReferenceLines()}
           
           {/* Y-axis labels */}
           {generateYLabels()}
@@ -307,18 +398,21 @@ const LinearChart: React.FC<LinearChartProps> = ({
           {generateXLabels()}
           
           {/* Line path */}
-          <Path
-            d={generateLinePath()}
-            stroke={chartPrimaryColor}
-            strokeWidth={3}
-            fill="none"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+          {generateSegmentPaths().map(({ path, colour }, idx) => (
+            <Path
+              key={`segment-${idx}`}
+              d={path}
+              stroke={colour}
+              strokeWidth={3}
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          ))}
           
           {/* Area fill */}
           <Path
-            d={`${generateLinePath()} L ${padding + chartAreaWidth} ${padding + chartAreaHeight} L ${padding} ${padding + chartAreaHeight} Z`}
+            d={`${generateSegmentPaths().map(s => s.path).join(' ')} L ${padding + chartAreaWidth} ${padding + chartAreaHeight} L ${padding} ${padding + chartAreaHeight} Z`}
             fill="url(#lineGradient)"
           />
           

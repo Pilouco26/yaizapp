@@ -1,14 +1,17 @@
 import { getOAuthRedirectURI } from '../utils/networkUtils';
 import * as AuthSession from 'expo-auth-session';
 
+// Import environment variables
+import { ENV } from './env';
+
 // OAuth Configuration using environment variables
 // This follows Google's new OAuth 2.0 policy for URI validation
 
 export const OAUTH_CONFIG = {
   // Google OAuth Configuration
   GOOGLE: {
-    CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || '292228884076-q7ekohms81t3ue8mccthpded079h5mov.apps.googleusercontent.com',
-    CLIENT_SECRET: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_SECRET || '',
+    CLIENT_ID: ENV.GOOGLE_CLIENT_ID,
+    CLIENT_SECRET: ENV.GOOGLE_CLIENT_SECRET,
     
     // Scopes for Google Sign-In (following OAuth 2.0 best practices)
     SCOPES: [
@@ -28,8 +31,8 @@ export const OAUTH_CONFIG = {
   
   // Facebook OAuth Configuration
   FACEBOOK: {
-    APP_ID: process.env.EXPO_PUBLIC_FACEBOOK_APP_ID || '',
-    APP_SECRET: process.env.EXPO_PUBLIC_FACEBOOK_APP_SECRET || '',
+    APP_ID: ENV.FACEBOOK_APP_ID,
+    APP_SECRET: ENV.FACEBOOK_APP_SECRET,
     
     // Facebook permissions
     PERMISSIONS: ['public_profile', 'email'],
@@ -61,7 +64,6 @@ export const getOAuthConfig = () => {
 
 // URI validation helper (following Google's OAuth 2.0 policy)
 export const validateRedirectUri = (uri: string): boolean => {
-  console.log('Validating redirect URI:', uri);
   
   // For Expo Go development, accept localhost URI
   // For production, accept app scheme URI
@@ -91,7 +93,5 @@ export const getRedirectUri = (): string => {
     ? 'http://localhost:8081/oauth/callback'
     : 'com.yaizapp.app://oauth/callback';
   
-  console.log('Generated redirect URI for environment:', __DEV__ ? 'development' : 'production');
-  console.log('Redirect URI:', redirectUri);
   return redirectUri;
 }; 

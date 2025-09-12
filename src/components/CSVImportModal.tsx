@@ -12,7 +12,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { JSONBillData } from '../utils/types';
-import { uploadBills } from '../services/BillsService';
+import { getFullApiUrlWithAuth, getDefaultHeaders, API_CONFIG } from '../utils/config';
+import { user_id } from '../config/constants';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface CSVImportModalProps {
@@ -57,61 +58,117 @@ const CSVImportModal: React.FC<CSVImportModalProps> = ({
 
   const parseCSV = async (uri: string): Promise<JSONBillData[]> => {
     try {
+      
       const response = await fetch(uri);
       const csvText = await response.text();
+
+      // Split keeping portability for Windows/Unix line endings and ignore empty lines
+      const lines = csvText.split(/\r?\n/).filter(line => line.trim());
       
-      // Parse CSV content
-      const lines = csvText.split('\n').filter(line => line.trim());
       if (lines.length < 2) {
         throw new Error('El archivo CSV debe tener al menos una fila de encabezados y una fila de datos');
       }
 
-      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      /**
+       * Parse one CSV line respecting quoted fields which can contain commas.
+       */
+      const parseCSVLine = (line: string): string[] => {
+        const result: string[] = [];
+        let current = '';
+        let inQuotes = false;
+
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i];
+          if (char === '"') {
+            // Toggle quote status
+            inQuotes = !inQuotes;
+          } else if (char === ',' && !inQuotes) {
+            result.push(current.trim());
+            current = '';
+          } else {
+            current += char;
+          }
+        }
+        result.push(current.trim());
+        return result;
+      };
+
+      const headers = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase());
+      
       const data: JSONBillData[] = [];
 
       for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
+        
+        const row = parseCSVLine(lines[i]);
+        
+        if (row.length < 3) {
+          continue;
+        }
 
-        const values = line.split(',').map(v => v.trim());
-        if (values.length < 3) continue;
+        // Identify relevant column indices
+        let dateIdx = -1;
+        let descIdx = -1;
+        let valueIdx = -1;
 
-        // Try to find the correct columns by common header names
-        let dateIndex = -1;
-        let descriptionIndex = -1;
-        let valueIndex = -1;
-
-        headers.forEach((header, index) => {
-          if (header.includes('fecha') || header.includes('date') || header.includes('fecha')) {
-            dateIndex = index;
-          } else if (header.includes('descripcion') || header.includes('description') || header.includes('concepto')) {
-            descriptionIndex = index;
-          } else if (header.includes('valor') || header.includes('value') || header.includes('importe') || header.includes('amount')) {
-            valueIndex = index;
+        headers.forEach((header, idx) => {
+          if ((header.includes('data') || header.includes('fecha') || header.includes('date')) && !header.includes('valor')) {
+            dateIdx = idx;
+          } else if (header.includes('descripció') || header.includes('descripcion') || header.includes('description') || header.includes('concepto')) {
+            descIdx = idx;
+          } else if (header.includes('import') || header.includes('valor') || header.includes('value') || header.includes('importe') || header.includes('amount')) {
+            valueIdx = idx;
           }
         });
 
-        // If we can't find the columns, use the first three columns
-        if (dateIndex === -1) dateIndex = 0;
-        if (descriptionIndex === -1) descriptionIndex = 1;
-        if (valueIndex === -1) valueIndex = 2;
+        // Fallbacks when not found
+        if (dateIdx === -1) {
+          dateIdx = 0;
+        }
+        if (descIdx === -1) {
+          descIdx = 1;
+        }
+        if (valueIdx === -1) {
+          valueIdx = 3; // In provided bank CSV, Import is 4th column
+        }
 
-        const date = values[dateIndex] || '';
-        const description = values[descriptionIndex] || '';
-        const valueStr = values[valueIndex] || '0';
+        const rawDate = row[dateIdx] ?? '';
+        const rawDescription = row[descIdx] ?? '';
+        const rawValue = row[valueIdx] ?? '0';
 
-        // Parse the value, removing currency symbols and commas
-        const value = parseFloat(valueStr.replace(/[€$,\s]/g, '')) || 0;
 
-        // Validate required fields
-        if (date && description && !isNaN(value)) {
-          data.push({
-            date,
+        // Clean description and value (remove quotes)
+        const description = rawDescription.replace(/^"|"$/g, '');
+
+        // Handle European number format and remove thousand separators & currency symbols
+        const cleanValueStr = rawValue
+          .replace(/"/g, '') // remove quotes
+          .replace(/\./g, '') // remove thousand separators (dots)
+          .replace(',', '.')  // replace comma with dot for decimal
+          .replace(/[€$\s]/g, '');
+
+
+        const value = parseFloat(cleanValueStr);
+
+        // Validation
+        const isValidDate = !!rawDate;
+        const isValidDescription = !!description;
+        const isValidValue = !isNaN(value);
+        
+
+        if (isValidDate && isValidDescription && isValidValue) {
+          const parsedItem = {
+            date: rawDate,
             description,
             value,
-          });
+          };
+          data.push(parsedItem);
+          console.log(`   ✅ Added to data array:`, parsedItem);
+        } else {
+          console.log(`   ❌ Skipped row - validation failed`);
         }
       }
+
+      console.log(`\n🎉 [CSVImportModal] Parsing completed!`);
 
       if (data.length === 0) {
         throw new Error('No se encontraron datos válidos en el archivo CSV');
@@ -119,6 +176,7 @@ const CSVImportModal: React.FC<CSVImportModalProps> = ({
 
       return data;
     } catch (err) {
+      console.error('❌ [CSVImportModal] CSV parsing error:', err);
       throw new Error(`Error al procesar el archivo CSV: ${err instanceof Error ? err.message : 'Error desconocido'}`);
     }
   };
@@ -137,21 +195,115 @@ const CSVImportModal: React.FC<CSVImportModalProps> = ({
       const asset = selectedFile.assets[0];
       const parsedData = await parseCSV(asset.uri);
 
-      // Upload the parsed data to the API
-      await uploadBills(parsedData);
-      
+      const monthEndpoint = getFullApiUrlWithAuth(API_CONFIG.ENDPOINTS.MONTHS.BASE);
+      const txEndpoint = getFullApiUrlWithAuth(API_CONFIG.ENDPOINTS.TRANSACTIONS.BASE);
+
+      // Group parsed items by year & month (using JS Date for reliability)
+      const groups: Record<string, Array<{ item: JSONBillData; jsDate: Date }>> = {};
+      parsedData.forEach(item => {
+        const dateStr = (item.date ?? '').trim();
+        if (!dateStr) return;
+        let jsDate: Date | null = null;
+        if (dateStr.includes('/') && dateStr.split('/').length === 3) {
+          const [d, m, y] = dateStr.split('/').map(v => parseInt(v, 10));
+          if (!isNaN(d) && !isNaN(m) && !isNaN(y)) {
+            jsDate = new Date(y, m - 1, d);
+          }
+        }
+        if (!jsDate || isNaN(jsDate.getTime())) {
+          jsDate = new Date(dateStr);
+        }
+        if (!jsDate || isNaN(jsDate.getTime())) return;
+        const year = jsDate.getFullYear();
+        const month = jsDate.getMonth() + 1;
+        const key = `${year}-${month}`;
+        if (!groups[key]) groups[key] = [];
+        groups[key].push({ item, jsDate });
+      });
+
+      // Sequentially process each month
+      for (const key of Object.keys(groups)) {
+        const [yearStr, monthStr] = key.split('-');
+        const year = Number(yearStr);
+        const month = Number(monthStr);
+        const monthBody = { userId: user_id, year, month };
+        let monthId: string | null = null;
+
+        // 1. Try to create month
+        const createRes = await fetch(monthEndpoint, {
+          method: 'POST',
+          headers: getDefaultHeaders(),
+          body: JSON.stringify(monthBody),
+        });
+        if (createRes.ok) {
+          const data = await createRes.json();
+          monthId = data?.data?.id ?? null;
+          console.log(`📅 Created month ${monthId}`);
+        } else if (createRes.status === 409) {
+          // 2. If conflict, fetch existing month via searchBy
+          const searchUrl = getFullApiUrlWithAuth(
+            `${API_CONFIG.ENDPOINTS.MONTHS.SEARCH}?userId=${user_id}&year=${year}&month=${month}`
+          );
+          const searchRes = await fetch(searchUrl, {
+            method: 'GET',
+            headers: getDefaultHeaders(),
+          });
+          if (!searchRes.ok) {
+            const errText = await searchRes.text();
+            throw new Error(`Failed to fetch existing month: ${errText}`);
+          }
+          const searchData = await searchRes.json();
+          monthId = searchData?.data?.[0]?.id ?? null;
+          console.log(`ℹ️ Using existing month ${monthId}`);
+        } else {
+          const errText = await createRes.text();
+          throw new Error(`Month create failed: ${errText}`);
+        }
+
+        if (!monthId) throw new Error('monthId not found');
+
+        // 3. Build & post transactions for this month
+        const rows = groups[key];
+        const txBodies = rows.map(({ item: row, jsDate }) => {
+          const rawAmount = Number(row.value);
+          const isExpense = rawAmount < 0;
+          return {
+            userId: user_id,
+            monthId,
+            type: isExpense ? 'EXPENSE' : 'INCOME',
+            description: row.description ?? '',
+            amount: rawAmount,
+            date: jsDate.toISOString(),
+          };
+        });
+
+        await Promise.all(
+          txBodies.map(async body => {
+            const txRes = await fetch(txEndpoint, {
+              method: 'POST',
+              headers: getDefaultHeaders(),
+              body: JSON.stringify(body),
+            });
+            if (!txRes.ok) {
+              const errText = await txRes.text();
+              throw new Error(`Transaction POST failed: ${errText}`);
+            }
+          })
+        );
+        console.log(`✅ Posted ${txBodies.length} transactions for month ${year}-${month}`);
+      }
+
+      // All done
       setUploadStatus('success');
       setError(null);
-      
-      // Call the onImport callback with the parsed data
       onImport(parsedData);
-      
-      // Close modal after successful upload
       setTimeout(() => {
         setSelectedFile(null);
         setUploadStatus('idle');
         onClose();
       }, 1500);
+
+      return; // early exit; rest of old code removed
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al procesar el archivo';

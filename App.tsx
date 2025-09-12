@@ -1,7 +1,6 @@
 import "./global.css";
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppWrapper from './src/components/AppWrapper';
 import { BillsProvider } from './src/contexts/BillsContext';
@@ -16,7 +15,6 @@ export default function App() {
           <BillsProvider>
             <NavigationContainer>
               <AppWrapper />
-              <StatusBar style="auto" />
             </NavigationContainer>
           </BillsProvider>
         </AuthProvider>

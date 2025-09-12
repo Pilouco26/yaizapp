@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import LinearChart from '../../components/LinearChart';
+import LinearChart, { ChartDataPoint } from '../../components/LinearChart';
 import { ThemedView, ThemedText, ThemedTouchableOpacity, ThemedScrollView, ThemedCard } from '../../components/ThemeWrapper';
 import { EnhancedInput } from '../../components/EnhancedInput';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -26,9 +26,13 @@ export interface GenericSavingsScreenProps {
   initialGoal: number;
   /* Initial current savings (EUR) */
   initialCurrent: number;
+  /* Optional target goal for line chart reference */
+  targetGoal?: number;
   /* Placeholder labels */
   goalPlaceholder: string;
   currentPlaceholder: string;
+  /* Chart data for line chart */
+  chartData?: ChartDataPoint[];
   /* Children can inject extra sections (members list, quick actions, etc.) */
   children?: React.ReactNode;
 }
@@ -43,6 +47,8 @@ export interface SavingsContentProps {
   chartData: any[];
   primaryColor: string;
   onDataPointPress?: (dataPoint: any) => void;
+  /** Optional goal reference line */
+  targetGoal?: number;
 }
 
 export const renderSavingsContent = ({
@@ -55,6 +61,7 @@ export const renderSavingsContent = ({
   chartData,
   primaryColor,
   onDataPointPress,
+  targetGoal,
 }: SavingsContentProps) => {
   const formatEuros = (amount: number): string => {
     return new Intl.NumberFormat('es-ES', {
@@ -103,6 +110,7 @@ export const renderSavingsContent = ({
           type="line"
           data={chartData}
           primaryColor={primaryColor}
+          targetValue={typeof targetGoal === 'number' ? targetGoal : undefined}
           height={240}
           title="Evolución de Ahorros"
           subtitle="6 meses"
@@ -125,6 +133,8 @@ const GenericSavingsScreen: React.FC<GenericSavingsScreenProps> = ({
   initialCurrent,
   goalPlaceholder,
   currentPlaceholder,
+  targetGoal,
+  chartData,
   children,
 }) => {
   const [goalInput, setGoalInput] = useState<string>('');
@@ -185,12 +195,29 @@ const GenericSavingsScreen: React.FC<GenericSavingsScreenProps> = ({
             <LinearChart
               type="progress"
               currentValue={current}
-              targetValue={goal}
+              targetValue={targetGoal ?? goal}
                 primaryColor={colors.primary}
                 secondaryColor={colors.textSecondary}
               title="Resumen de Ahorros"
             />
           </View>
+
+          {/* Chart Section */}
+          {chartData && chartData.length > 0 && (
+            <ThemedCard className="p-6 mb-6">
+              <LinearChart
+                type="line"
+                data={chartData}
+                primaryColor={primaryColor}
+                targetValue={targetGoal}
+                height={240}
+                title="Evolución de Gastos"
+                subtitle="6 meses"
+                showZeroLine={true}
+                onDataPointPress={(dataPoint) => console.log('Data point pressed:', dataPoint)}
+              />
+            </ThemedCard>
+          )}
 
           {/* Update Goal Section */}
             <ThemedCard className="p-6 mb-6">

@@ -3,12 +3,14 @@ import {
   ScrollView,
   View,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearChart, { ChartDataPoint } from '../../components/LinearChart';
 import { ThemedView, ThemedText, ThemedTouchableOpacity, ThemedCard } from '../../components/ThemeWrapper';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useMonthsData } from '../../hooks/useMonthsData';
 
 // Types -----------------------------------------------------------------------
 
@@ -21,16 +23,7 @@ const SECONDARY_COLOR_LIGHT = '#3b82f6';
 const PRIMARY_COLOR_DARK = '#38bdf8';
 const SECONDARY_COLOR_DARK = '#60a5fa';
 
-// Mock data for charts
-const soloSavingsData: ChartDataPoint[] = [
-  { label: 'Ene', value: 1200 },
-  { label: 'Feb', value: 1500 },
-  { label: 'Mar', value: 1800 },
-  { label: 'Abr', value: 2100 },
-  { label: 'May', value: 2400 },
-  { label: 'Jun', value: 2800 },
-];
-
+// Mock data for family savings (since we only have individual data for now)
 const familiaSavingsData: ChartDataPoint[] = [
   { label: 'Ene', value: 2500 },
   { label: 'Feb', value: 3200 },
@@ -43,12 +36,25 @@ const familiaSavingsData: ChartDataPoint[] = [
 // Component -------------------------------------------------------------------
 
 const SavingsScreen: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabKey>('familia');
+  const [activeTab, setActiveTab] = useState<TabKey>('solo');
   const { theme, colors } = useTheme();
+  const { 
+    chartData: soloChartData,
+    totalExpenses, 
+    totalIncome, 
+    currentMonthExpenses, 
+    currentMonthIncome, 
+    isLoading, 
+    error 
+  } = useMonthsData();
 
   // Theme-aware colors
   const primaryColor = theme === 'light' ? PRIMARY_COLOR_LIGHT : PRIMARY_COLOR_DARK;
   const secondaryColor = theme === 'light' ? SECONDARY_COLOR_LIGHT : SECONDARY_COLOR_DARK;
+
+  // Calculate savings
+  const totalSavings = totalIncome - totalExpenses;
+  const currentMonthSavings = currentMonthIncome - currentMonthExpenses;
 
   const handleDataPointPress = (dataPoint: ChartDataPoint) => {
     console.log('Data point pressed:', dataPoint);
@@ -63,49 +69,89 @@ const SavingsScreen: React.FC = () => {
     }).format(amount);
   };
 
-  const renderSoloContent = () => (
-    <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-      <ThemedCard style={styles.card}>
-        <View style={[styles.iconContainer, { backgroundColor: primaryColor }]}>
-          <Ionicons name="person" size={48} color="#ffffff" />
+  const renderSoloContent = () => {
+    if (isLoading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={primaryColor} />
+          <ThemedText style={styles.loadingText}>Cargando datos...</ThemedText>
         </View>
-        <ThemedText style={styles.title}>Ahorros Personales</ThemedText>
-        <ThemedText style={styles.subtitle} variant="secondary">Gestiona tus ahorros individuales</ThemedText>
-        
-        {/* Stats Cards */}
-        <View style={styles.statsContainer}>
-          <ThemedView style={styles.statCard} variant="surface">
-            <ThemedText style={styles.statLabel} variant="secondary">Total Actual</ThemedText>
-            <ThemedText style={styles.statValue}>{formatEuros(2800)}</ThemedText>
-            <View style={styles.trendContainer}>
-              <Ionicons name="trending-up" size={16} color={primaryColor} />
-              <ThemedText style={[styles.trendText, { color: primaryColor }]}>+12.5%</ThemedText>
-            </View>
-          </ThemedView>
+      );
+    }
+
+    if (error) {
+      return (
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle" size={48} color={colors.error} />
+          <ThemedText style={styles.errorTitle}>Error al cargar los datos</ThemedText>
+          <ThemedText style={styles.errorMessage}>{error}</ThemedText>
+        </View>
+      );
+    }
+
+    return (
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        <ThemedCard style={styles.card}>
+          <View style={[styles.iconContainer, { backgroundColor: primaryColor }]}>
+            <Ionicons name="person" size={48} color="#ffffff" />
+          </View>
+          <ThemedText style={styles.title}>Ahorros Personales</ThemedText>
+          <ThemedText style={styles.subtitle} variant="secondary">Gestiona tus ahorros individuales</ThemedText>
           
-          <ThemedView style={styles.statCard} variant="surface">
-            <ThemedText style={styles.statLabel} variant="secondary">Este Mes</ThemedText>
-            <ThemedText style={styles.statValue}>{formatEuros(400)}</ThemedText>
-            <View style={styles.trendContainer}>
-              <Ionicons name="trending-up" size={16} color={primaryColor} />
-              <ThemedText style={[styles.trendText, { color: primaryColor }]}>+16.7%</ThemedText>
-            </View>
-          </ThemedView>
-        </View>
-        
-        {/* Chart Section */}
-        <LinearChart
-          type="line"
-          data={soloSavingsData}
-          primaryColor={primaryColor}
-          height={240}
-          title="Evolución de Ahorros"
-          subtitle="6 meses"
-          onDataPointPress={handleDataPointPress}
-        />
-      </ThemedCard>
-    </ScrollView>
-  );
+          {/* Stats Cards */}
+          <View style={styles.statsContainer}>
+            <ThemedView style={styles.statCard} variant="surface">
+              <ThemedText style={styles.statLabel} variant="secondary">Total Actual</ThemedText>
+              <ThemedText style={styles.statValue}>{formatEuros(Math.max(0, totalSavings))}</ThemedText>
+              <View style={styles.trendContainer}>
+                <Ionicons 
+                  name={totalSavings >= 0 ? "trending-up" : "trending-down"} 
+                  size={16} 
+                  color={totalSavings >= 0 ? colors.success : colors.error} 
+                />
+                <ThemedText style={[
+                  styles.trendText, 
+                  { color: totalSavings >= 0 ? colors.success : colors.error }
+                ]}>
+                  {totalSavings >= 0 ? '+' : ''}{formatEuros(totalSavings)}
+                </ThemedText>
+              </View>
+            </ThemedView>
+            
+            <ThemedView style={styles.statCard} variant="surface">
+              <ThemedText style={styles.statLabel} variant="secondary">Este Mes</ThemedText>
+              <ThemedText style={styles.statValue}>{formatEuros(Math.max(0, currentMonthSavings))}</ThemedText>
+              <View style={styles.trendContainer}>
+                <Ionicons 
+                  name={currentMonthSavings >= 0 ? "trending-up" : "trending-down"} 
+                  size={16} 
+                  color={currentMonthSavings >= 0 ? colors.success : colors.error} 
+                />
+                <ThemedText style={[
+                  styles.trendText, 
+                  { color: currentMonthSavings >= 0 ? colors.success : colors.error }
+                ]}>
+                  {currentMonthSavings >= 0 ? '+' : ''}{formatEuros(currentMonthSavings)}
+                </ThemedText>
+              </View>
+            </ThemedView>
+          </View>
+          
+          {/* Chart Section */}
+          <LinearChart
+            type="line"
+            data={soloChartData}
+            primaryColor={primaryColor}
+            height={240}
+            title="Evolución de Gastos"
+            subtitle="6 meses"
+            showZeroLine={true}
+            onDataPointPress={handleDataPointPress}
+          />
+        </ThemedCard>
+      </ScrollView>
+    );
+  };
 
   const renderFamiliaContent = () => (
     <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
@@ -306,6 +352,34 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     marginLeft: 4,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  errorMessage: {
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center',
+    opacity: 0.7,
   },
 });
 

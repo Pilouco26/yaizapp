@@ -1,4 +1,4 @@
-import { API_CONFIG, getFullApiUrl } from '../utils/config';
+import { API_CONFIG, getFullApiUrlWithAuth, getDefaultHeaders } from '../../utils/config';
 
 export type APIRawBill = {
   Data: string;
@@ -13,13 +13,11 @@ export type APIRawBill = {
  */
 export const getBills = async (): Promise<any[]> => {
   try {
-    const apiUrl = getFullApiUrl(API_CONFIG.ENDPOINTS.BILLS);
+    const apiUrl = getFullApiUrlWithAuth(API_CONFIG.ENDPOINTS.BILLS);
     
     const response = await fetch(apiUrl, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getDefaultHeaders(),
     });
 
     if (!response.ok) {
@@ -39,16 +37,14 @@ export const getBills = async (): Promise<any[]> => {
  */
 export const uploadBills = async (billsData: any[]): Promise<any> => {
   try {
-    const apiUrl = getFullApiUrl(API_CONFIG.ENDPOINTS.UPLOAD_BILLS);
+    const apiUrl = getFullApiUrlWithAuth(API_CONFIG.ENDPOINTS.UPLOAD_BILLS);
     
     console.log('📤 Uploading bills to API:', apiUrl);
     console.log('📊 Data being sent:', JSON.stringify(billsData, null, 2));
     
     const response = await fetch(apiUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getDefaultHeaders(),
       body: JSON.stringify(billsData),
     });
 

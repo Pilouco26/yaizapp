@@ -2,10 +2,21 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import GenericSavingsScreen from './GenericSavingsScreen';
+import { ChartDataPoint } from '../../components/LinearChart';
 
 const FamilySavingsScreen: React.FC = () => {
   const mockFamilyGoal = 10000;
   const mockFamilyCurrent = 7500;
+
+  // Mock chart data with negative values to demonstrate functionality
+  const mockFamilyChartData: ChartDataPoint[] = [
+    { label: 'Ene', value: -1200 },
+    { label: 'Feb', value: -800 },
+    { label: 'Mar', value: -1500 },
+    { label: 'Abr', value: -900 },
+    { label: 'May', value: -1100 },
+    { label: 'Jun', value: -644 },
+  ];
 
   const familyMembers = [
     { name: 'María', contribution: 2500, color: '#3b82f6' },
@@ -29,6 +40,7 @@ const FamilySavingsScreen: React.FC = () => {
       initialCurrent={mockFamilyCurrent}
       goalPlaceholder="Nuevo objetivo familiar:"
       currentPlaceholder="Ahorros familiares actuales:"
+      chartData={mockFamilyChartData}
     >
       {/* Family Members Contributions */}
       <View className="bg-white p-6 rounded-2xl mb-6 shadow-lg shadow-black/10">

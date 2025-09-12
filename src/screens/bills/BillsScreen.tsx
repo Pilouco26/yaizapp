@@ -1,23 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Alert,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomButton from '../../components/CustomButton';
 import CSVImportModal from '../../components/CSVImportModal';
-import NetworkTest from '../../components/NetworkTest';
 import { useBillsContext } from '../../contexts/BillsContext';
 import { Bill } from '../../utils/types';
 import { formatDate } from '../../utils/helpers';
 import sampleBills from '../../utils/sampleBills.json';
 import { ThemedView, ThemedText, ThemedTouchableOpacity, ThemedScrollView, ThemedCard } from '../../components/ThemeWrapper';
 import { useTheme } from '../../contexts/ThemeContext';
+import { TransactionsService } from '../../services/apiservices/TransactionsService';
+import { user_id } from '../../config/constants';
 
 const BillsScreen: React.FC = () => {
   const [showImportModal, setShowImportModal] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5);
   const { colors } = useTheme();
 
   const {
@@ -33,6 +41,109 @@ const BillsScreen: React.FC = () => {
       currency: 'EUR',
     }).format(amount);
   };
+
+  const truncateBillName = (name: string, maxLength: number = 25) => {
+    if (name.length <= maxLength) {
+      return name;
+    }
+    return name.substring(0, maxLength - 3) + '...';
+  };
+
+  // Pagination logic
+  const totalPages = Math.ceil(bills.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentBills = bills.slice(startIndex, endIndex);
+
+  // Simple navigation functions
+  const goToNextPage = () => {
+    if (currentPage < totalPages && totalPages > 0) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  // Reset to first page when bills change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [bills.length]);
+
+  // Ensure current page is within valid range
+  useEffect(() => {
+    if (totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    } else if (currentPage < 1) {
+      setCurrentPage(1);
+    }
+  }, [totalPages, currentPage]);
+
+  // Fetch transactions from API using the same authentication as other screens
+  const fetchTransactions = async () => {
+    try {
+      setIsLoadingTransactions(true);
+      
+      const { getFullApiUrlWithAuth, getDefaultHeaders, API_CONFIG } = await import('../../utils/config');
+      const txUrl = getFullApiUrlWithAuth(`${API_CONFIG.ENDPOINTS.TRANSACTIONS.SEARCH}?userId=${user_id}`);
+      
+      
+      const response = await fetch(txUrl, {
+        method: 'GET',
+        headers: getDefaultHeaders(),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        setTransactions(Array.isArray(data.data) ? data.data : [data.data]);
+      } else {
+        setTransactions([]);
+      }
+    } catch (error) {
+      setTransactions([]);
+    } finally {
+      setIsLoadingTransactions(false);
+    }
+  };
+
+  // Refresh both bills and transactions
+  const refreshAllData = async () => {
+    try {
+      setIsRefreshing(true);
+      await Promise.all([
+        refreshBills(),
+        fetchTransactions()
+      ]);
+    } catch (error) {
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Handle pull-to-refresh action
+  const handlePullRefresh = async () => {
+    try {
+      setIsPullRefreshing(true);
+      await refreshAllData();
+    } catch (error) {
+    } finally {
+      setIsPullRefreshing(false);
+    }
+  };
+
+  // Fetch transactions when screen loads
+  useEffect(() => {
+    fetchTransactions();
+  }, []);
 
   /**
    * Convierte un array genérico de objetos
@@ -62,32 +173,19 @@ const BillsScreen: React.FC = () => {
     });
 
   const handleImportJSON = async (jsonData: Bill[] | any[]) => {
-    const normalized = normalizeJSONBills(jsonData);
-    // Note: This would need to be integrated with the context
-    // For now, we'll just refresh from API
-    await refreshBills();
-    setShowImportModal(false);
-  };
-
-  const handleRefreshBills = async () => {
     try {
-      await refreshBills();
-      Alert.alert('Éxito', 'Facturas actualizadas correctamente');
+      const normalized = normalizeJSONBills(jsonData);
+      
+      // Refresh both bills and transactions from API to get the latest data
+      await refreshAllData();
+      
+      setShowImportModal(false);
     } catch (error) {
-      Alert.alert('Error', 'No se pudieron actualizar las facturas');
+      // Still close the modal even if refresh fails
+      setShowImportModal(false);
     }
   };
 
-  const handleLoadSampleData = async () => {
-    try {
-      // Note: This would need to be integrated with the context
-      // For now, we'll just refresh from API
-      await refreshBills();
-      Alert.alert('Éxito', 'Datos de ejemplo cargados');
-    } catch (error) {
-      Alert.alert('Error', 'No se pudieron cargar los datos de ejemplo');
-    }
-  };
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -121,11 +219,11 @@ const BillsScreen: React.FC = () => {
             </ThemedView>
         )}
         
-        {isLoading && (
+        {(isLoading || isRefreshing || isLoadingTransactions) && !isPullRefreshing && (
           <View className="items-center p-5">
               <ActivityIndicator size="large" color={colors.primary} />
               <ThemedText className="mt-2 text-sm" variant="secondary">
-              Cargando facturas...
+              {isRefreshing ? 'Actualizando datos...' : isLoadingTransactions ? 'Cargando transacciones...' : 'Cargando facturas...'}
               </ThemedText>
           </View>
         )}
@@ -134,38 +232,65 @@ const BillsScreen: React.FC = () => {
             style={{ flex: 1 }} 
             contentContainerStyle={{ padding: 16, paddingBottom: 0, flexGrow: 1 }}
             showsVerticalScrollIndicator={false}
-          >
-          {/* Network Test Component */}
-          <NetworkTest onTestComplete={(isNetworkWorking) => {
-            if (isNetworkWorking) {
-              // Network test successful, now load bills
-            } else {
-              // Network test failed, show error
+            refreshControl={
+              <RefreshControl
+                refreshing={isPullRefreshing}
+                onRefresh={handlePullRefresh}
+                colors={[colors.primary]}
+                tintColor={colors.primary}
+                title="Actualizando datos..."
+                titleColor={colors.textSecondary}
+              />
             }
-          }} />
+          >
           
           {/* Bills Summary Card */}
             <ThemedCard className="p-5 mb-5 items-center">
               <ThemedText className="text-lg font-bold mb-2">
               Total de Facturas
               </ThemedText>
-              <ThemedText className={`text-3xl font-bold mb-1 ${
-              bills.reduce((sum, bill) => sum + bill.amount, 0) >= 0 
-                  ? 'text-blue-600' 
-                  : 'text-blue-600'
-            }`}>
-              {formatCurrency(bills.reduce((sum, bill) => sum + bill.amount, 0))}
+              <ThemedText 
+                className="text-3xl font-bold mb-1"
+                style={{
+                  color: bills.reduce((sum, bill) => sum + bill.amount, 0) >= 0 
+                    ? colors.success 
+                    : colors.error
+                }}
+              >
+                {formatCurrency(bills.reduce((sum, bill) => sum + bill.amount, 0))}
               </ThemedText>
               <ThemedText className="text-sm" variant="tertiary">
               {bills.length} factura{bills.length !== 1 ? 's' : ''} en total
               </ThemedText>
             </ThemedCard>
+
+          {/* Transactions Summary Card */}
+          {transactions.length > 0 && (
+            <ThemedCard className="p-5 mb-5 items-center">
+              <ThemedText className="text-lg font-bold mb-2">
+                Transacciones Recientes
+              </ThemedText>
+              <ThemedText 
+                className="text-2xl font-bold mb-1"
+                style={{
+                  color: transactions.reduce((sum, tx) => sum + (tx.amount || 0), 0) >= 0 
+                    ? colors.success 
+                    : colors.error
+                }}
+              >
+                {formatCurrency(transactions.reduce((sum, tx) => sum + (tx.amount || 0), 0))}
+              </ThemedText>
+              <ThemedText className="text-sm" variant="tertiary">
+                {transactions.length} transacción{transactions.length !== 1 ? 'es' : ''} encontrada{transactions.length !== 1 ? 's' : ''}
+              </ThemedText>
+            </ThemedCard>
+          )}
           
           {/* Bills List */}
             <ThemedCard className="rounded-2xl p-4 mb-4">
             <View className="flex-row justify-between items-center mb-4">
                 <ThemedText className="text-xl font-bold">
-                Todas las Facturas ({bills.length})
+                Facturas ({bills.length})
                 </ThemedText>
             </View>
             
@@ -180,76 +305,99 @@ const BillsScreen: React.FC = () => {
                   </ThemedText>
               </View>
             ) : (
-              bills.map((bill) => (
-                  <View key={bill.id} className="flex-row items-center py-3">
-                  <View className="w-10 h-10 rounded-full bg-neutral-100 justify-center items-center mr-3">
-                    <Ionicons 
-                      name={getCategoryIcon(bill.category) as any} 
-                      size={24} 
-                        color={colors.textSecondary}
-                    />
+              <>
+                {currentBills.map((bill) => (
+                    <View key={bill.id} className="flex-row items-center py-3">
+                    <View className="w-10 h-10 rounded-full bg-neutral-100 justify-center items-center mr-3">
+                      <Ionicons 
+                        name={getCategoryIcon(bill.category) as any} 
+                        size={24} 
+                          color={colors.textSecondary}
+                      />
+                    </View>
+                    
+                    <View className="flex-1">
+                        <ThemedText className="text-base font-semibold">
+                        {truncateBillName(bill.name)}
+                        </ThemedText>
+                        <ThemedText className="text-sm mt-0.5" variant="secondary">
+                        {bill.category}
+                        </ThemedText>
+                        <ThemedText className="text-xs mt-0.5" variant="tertiary">
+                        Vence: {formatDate(bill.dueDate)}
+                        </ThemedText>
+                    </View>
+                    
+                    <View className="items-end">
+                        <ThemedText 
+                          className="text-base font-bold"
+                          style={{
+                            color: bill.amount >= 0 ? colors.success : colors.error
+                          }}
+                        >
+                          {formatCurrency(bill.amount)}
+                        </ThemedText>
+                    </View>
                   </View>
-                  
-                  <View className="flex-1">
-                      <ThemedText className="text-base font-semibold">
-                      {bill.name}
-                      </ThemedText>
-                      <ThemedText className="text-sm mt-0.5" variant="secondary">
-                      {bill.category}
-                      </ThemedText>
-                      <ThemedText className="text-xs mt-0.5" variant="tertiary">
-                      Vence: {formatDate(bill.dueDate)}
-                      </ThemedText>
+                ))}
+
+                {/* Simple Pagination Controls */}
+                {totalPages > 1 && (
+                  <View className="mt-4 pt-4 border-t border-gray-200">
+                    <View className="flex-row justify-between items-center">
+                      {/* Previous Button */}
+                      <ThemedTouchableOpacity
+                        onPress={goToPreviousPage}
+                        disabled={currentPage === 1}
+                        className={`w-12 h-12 rounded-full items-center justify-center ${
+                          currentPage === 1 ? 'opacity-50' : ''
+                        }`}
+                        style={{
+                          backgroundColor: currentPage === 1 ? colors.surface : colors.primary
+                        }}
+                      >
+                        <Ionicons 
+                          name="chevron-back" 
+                          size={24} 
+                          color={currentPage === 1 ? colors.textTertiary : '#ffffff'} 
+                        />
+                      </ThemedTouchableOpacity>
+
+                      {/* Next Button */}
+                      <ThemedTouchableOpacity
+                        onPress={goToNextPage}
+                        disabled={currentPage === totalPages}
+                        className={`w-12 h-12 rounded-full items-center justify-center ${
+                          currentPage === totalPages ? 'opacity-50' : ''
+                        }`}
+                        style={{
+                          backgroundColor: currentPage === totalPages ? colors.surface : colors.primary
+                        }}
+                      >
+                        <Ionicons 
+                          name="chevron-forward" 
+                          size={24} 
+                          color={currentPage === totalPages ? colors.textTertiary : '#ffffff'} 
+                        />
+                      </ThemedTouchableOpacity>
+                    </View>
                   </View>
-                  
-                  <View className="items-end">
-                      <ThemedText className={`text-base font-bold ${
-                        bill.amount >= 0 ? 'text-blue-600' : 'text-blue-600'
-                    }`}>
-                      {formatCurrency(bill.amount)}
-                      </ThemedText>
-                  </View>
-                </View>
-              ))
+                )}
+              </>
             )}
             </ThemedCard>
 
-          {/* API and Import Buttons */}
-          <View className="flex-row justify-between mt-4">
-              <ThemedTouchableOpacity 
-                className="flex-row items-center justify-center py-4 rounded-xl flex-1 mr-2 shadow-md shadow-black/20"
-                variant="success"
-              onPress={handleRefreshBills}
-            >
-                <Ionicons name="refresh" size={24} color="#ffffff" />
-                <ThemedText className="text-base font-bold ml-2" style={{ color: '#ffffff' }}>
-                Recargar desde API
-                </ThemedText>
-              </ThemedTouchableOpacity>
-
-              <ThemedTouchableOpacity 
-                className="flex-row items-center justify-center py-4 rounded-xl flex-1 ml-2 shadow-md shadow-black/20"
-                variant="primary"
-              onPress={() => setShowImportModal(true)}
-            >
-                <Ionicons name="cloud-upload" size={24} color="#ffffff" />
-                <ThemedText className="text-base font-bold ml-2" style={{ color: '#ffffff' }}>
-                Importar Facturas
-                </ThemedText>
-              </ThemedTouchableOpacity>
-          </View>
-
-          {/* Sample Data Button */}
-            <ThemedTouchableOpacity 
-              className="flex-row items-center justify-center py-4 rounded-xl mt-4 shadow-md shadow-black/20"
-              variant="secondary"
-            onPress={handleLoadSampleData}
+          {/* Import Button */}
+          <ThemedTouchableOpacity 
+            className="flex-row items-center justify-center py-4 rounded-xl mt-4 shadow-md shadow-black/20"
+            variant="primary"
+            onPress={() => setShowImportModal(true)}
           >
-              <Ionicons name="document-text" size={24} color="#ffffff" />
-              <ThemedText className="text-base font-bold ml-2" style={{ color: '#ffffff' }}>
-              Cargar Datos de Ejemplo
-              </ThemedText>
-            </ThemedTouchableOpacity>
+            <Ionicons name="cloud-upload" size={24} color="#ffffff" />
+            <ThemedText className="text-base font-bold ml-2" style={{ color: '#ffffff' }}>
+            Importar Facturas
+            </ThemedText>
+          </ThemedTouchableOpacity>
           </ThemedScrollView>
 
         {/* CSV Import Modal */}
@@ -257,7 +405,7 @@ const BillsScreen: React.FC = () => {
           visible={showImportModal}
           onClose={() => setShowImportModal(false)}
           onImport={handleImportJSON}
-          isLoading={isLoading}
+          isLoading={isLoading || isRefreshing || isLoadingTransactions || isPullRefreshing}
         />
         </ThemedView>
     </SafeAreaView>

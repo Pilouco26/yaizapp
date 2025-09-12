@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Bill } from '../utils/types';
-import { getBills } from '../services/BillsService';
+import { TransactionsService } from '../services';
+import { user_id } from '../config/constants';
+import { API_CONFIG, getFullApiUrlWithAuth, getDefaultHeaders } from '../utils/config';
 
 interface BillsContextType {
   totalBillsAmount: number;
@@ -38,19 +40,30 @@ export const BillsProvider: React.FC<BillsProviderProps> = ({ children }) => {
       setIsLoading(true);
       setError(null);
       
-      const apiBills = await getBills();
-      
-      // Transform API bills to Bill type
-      const transformed = apiBills.map((item: any, idx: number) => ({
-        id: `api-${idx}`,
-        name: item.description || item['Descripció'] || 'Sin descripción',
-        amount: Number(item.value || item.Import || 0),
-        dueDate: item.date || item.Data || new Date().toISOString(),
-        category: 'Otros',
-        currency: item.currency || item.Moneda || 'EUR',
-      }));
+      // Backend transactions for the current user (mapped to Bill shape)
+      let backendBills: Bill[] = [];
+      try {
+        const txUrl = getFullApiUrlWithAuth(`${API_CONFIG.ENDPOINTS.TRANSACTIONS.SEARCH}?userId=${user_id}`);
+        const txResponse = await fetch(txUrl, { method: 'GET', headers: getDefaultHeaders() });
+        if (txResponse.ok) {
+          const txJson = await txResponse.json();
+          const txList = Array.isArray(txJson?.data) ? txJson.data : txJson.data ? [txJson.data] : [];
+          backendBills = txList.map((tx: any) => ({
+            id: tx.id ?? `tx-${Date.now()}`,
+            name: tx.description ?? 'Transacción',
+            amount: tx.amount ?? 0,
+            dueDate: tx.date ?? new Date().toISOString(),
+            category: tx.category ?? tx.type ?? 'Otros',
+            currency: 'EUR',
+          }));
+        } else {
+          console.warn('⚠️ [BillsContext] Failed to fetch transactions, status:', txResponse.status);
+        }
+      } catch (err) {
+        console.warn('⚠️ [BillsContext] Error fetching transactions:', err);
+      }
 
-      setBills(transformed);
+      setBills(backendBills);
       
     } catch (err: any) {
       const errorMessage = err.message || 'Error al cargar las facturas';

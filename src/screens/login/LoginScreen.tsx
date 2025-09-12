@@ -233,8 +233,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
                       ]}
                 onPress={onMetaLogin}
                       disabled={isLoading || isSubmitting}
-              >
-                      <Ionicons name="logo-facebook" size={20} color="#ffffff" />
+                    >
+                      <View style={styles.socialIconsContainer}>
+                        <Ionicons name="logo-facebook" size={20} color="#ffffff" />
+                        <Ionicons name="logo-instagram" size={20} color="#ffffff" style={{ marginLeft: 8 }} />
+                      </View>
                       <ThemedText style={styles.socialButtonText}>
                   Continuar con Meta
                 </ThemedText>
@@ -518,7 +521,7 @@ const styles = StyleSheet.create({
   socialButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    marginLeft: 12,
+    marginLeft: 16,
     color: '#ffffff',
   },
   dividerContainer: {
@@ -611,6 +614,10 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.7,
+  },
+  socialIconsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
 

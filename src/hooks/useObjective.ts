@@ -9,8 +9,8 @@ export const useObjective = () => {
   const [objectiveAmount, setObjectiveAmount] = useState<number>(0);
   const { totalBillsAmount, refreshBills } = useBillsContext();
 
-  // Calculate total available (objective + total bills)
-  const totalAvailable = objectiveAmount + totalBillsAmount;
+  // Calculate total available (total bills - objective)
+  const totalAvailable = totalBillsAmount - objectiveAmount;
 
   // Load objective amount from storage
   const loadObjectiveFromStorage = async () => {
