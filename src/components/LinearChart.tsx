@@ -45,6 +45,12 @@ export interface LinearChartProps {
   showTooltips?: boolean;
   showGrid?: boolean;
   showLabels?: boolean;
+  /**
+   * If true, the y-axis will be adjusted to fit the data range (min to max of data).
+   * If false, the y-axis will always include 0 and use nice rounded numbers.
+   * Defaults to false.
+   */
+  fitDataRange?: boolean;
   
   // Progress bar specific
   progressPercentage?: number;
@@ -101,6 +107,7 @@ const LinearChart: React.FC<LinearChartProps> = ({
   showGrid = true,
   showLabels = true,
   showZeroLine = true,
+  fitDataRange = false,
   segmentColors = {
     aboveGoal: '#22c55e',     // Tailwind green-500
     betweenGoalAndZero: '#eab308', // Tailwind yellow-500
@@ -152,25 +159,39 @@ const LinearChart: React.FC<LinearChartProps> = ({
     const dataMinY = Math.min(...values);
     const dataMaxY = Math.max(...values);
     
-    // Always include 0 in the range
-    const minY = Math.min(dataMinY, 0);
-    const maxY = Math.max(dataMaxY, 0);
+    let minY, maxY;
     
-    // Round up to nice numbers for better Y-axis labels
-    const yRange = maxY - minY;
-    const niceRange = Math.ceil(yRange / 1000) * 1000; // Round up to nearest 1000
-    const niceMinY = Math.floor(minY / 1000) * 1000; // Round down to nearest 1000
-    const niceMaxY = niceMinY + niceRange;
+    if (fitDataRange) {
+      // Fit the data range exactly
+      minY = dataMinY;
+      maxY = dataMaxY;
+      
+      // Add some padding (10% of range)
+      const padding = (dataMaxY - dataMinY) * 0.1;
+      minY = dataMinY - padding;
+      maxY = dataMaxY + padding;
+    } else {
+      // Always include 0 in the range
+      minY = Math.min(dataMinY, 0);
+      maxY = Math.max(dataMaxY, 0);
+      
+      // Round up to nice numbers for better Y-axis labels
+      const yRange = maxY - minY;
+      const niceRange = Math.ceil(yRange / 1000) * 1000; // Round up to nearest 1000
+      const niceMinY = Math.floor(minY / 1000) * 1000; // Round down to nearest 1000
+      const niceMaxY = niceMinY + niceRange;
+      
+      // Ensure 0 is always included
+      minY = Math.min(niceMinY, 0);
+      maxY = Math.max(niceMaxY, 0);
+    }
     
-    // Ensure 0 is always included
-    const adjustedMinY = Math.min(niceMinY, 0);
-    const adjustedMaxY = Math.max(niceMaxY, 0);
-    const finalRange = adjustedMaxY - adjustedMinY || 1;
+    const finalRange = maxY - minY || 1;
     
     const xScale = chartAreaWidth / (data.length - 1);
     const yScale = chartAreaHeight / finalRange;
     
-    return { xScale, yScale, minY: adjustedMinY, maxY: adjustedMaxY };
+    return { xScale, yScale, minY, maxY };
   };
 
   /**

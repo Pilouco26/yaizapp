@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { Bill } from '../utils/types';
 import { TransactionsService } from '../services';
 import { user_id } from '../config/constants';
@@ -10,6 +10,8 @@ interface BillsContextType {
   isLoading: boolean;
   error: string | null;
   refreshBills: () => Promise<void>;
+  lastRefreshTime: number;
+  refreshId: string;
 }
 
 const BillsContext = createContext<BillsContextType | undefined>(undefined);
@@ -30,6 +32,9 @@ export const BillsProvider: React.FC<BillsProviderProps> = ({ children }) => {
   const [bills, setBills] = useState<Bill[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastRefreshTime, setLastRefreshTime] = useState<number>(0);
+  const [refreshId, setRefreshId] = useState<string>('');
+  const isRefreshingRef = useRef(false);
 
   // Calculate total bills amount
   const totalBillsAmount = bills.reduce((sum, bill) => sum + bill.amount, 0);
@@ -76,7 +81,19 @@ export const BillsProvider: React.FC<BillsProviderProps> = ({ children }) => {
 
   // Refresh bills
   const refreshBills = async () => {
-    await fetchBills();
+    if (isRefreshingRef.current) {
+      return; // Prevent multiple simultaneous refreshes
+    }
+    
+    isRefreshingRef.current = true;
+    try {
+      await fetchBills();
+      const now = Date.now();
+      setLastRefreshTime(now);
+      setRefreshId(`refresh-${now}-${Math.random()}`);
+    } finally {
+      isRefreshingRef.current = false;
+    }
   };
 
   useEffect(() => {
@@ -89,6 +106,8 @@ export const BillsProvider: React.FC<BillsProviderProps> = ({ children }) => {
     isLoading,
     error,
     refreshBills,
+    lastRefreshTime,
+    refreshId,
   };
 
   return (

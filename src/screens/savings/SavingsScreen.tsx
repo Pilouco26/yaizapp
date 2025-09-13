@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ScrollView,
   View,
   StyleSheet,
-  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,6 +12,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useMonthsData } from '../../hooks/useMonthsData';
 import { useObjective } from '../../hooks/useObjective';
 import { useBillsContext } from '../../contexts/BillsContext';
+import SavingsContent from './SavingsContent';
 
 // Types -----------------------------------------------------------------------
 
@@ -42,15 +42,20 @@ const SavingsScreen: React.FC = () => {
   const { theme, colors } = useTheme();
   const { 
     chartData: soloChartData,
+    months,
     totalExpenses, 
     totalIncome, 
     currentMonthExpenses, 
     currentMonthIncome, 
+    currentMonthSavings,
+    monthlySavingsPercentage,
     isLoading, 
-    error 
+    error,
+    refetch: refetchMonthsData
   } = useMonthsData();
   const { objectiveAmount } = useObjective();
-  const { totalBillsAmount } = useBillsContext();
+  const { totalBillsAmount, refreshId } = useBillsContext();
+  const lastRefreshIdRef = useRef<string>('');
 
   // Theme-aware colors
   const primaryColor = theme === 'light' ? PRIMARY_COLOR_LIGHT : PRIMARY_COLOR_DARK;
@@ -58,10 +63,73 @@ const SavingsScreen: React.FC = () => {
 
   // Calculate savings - use totalBillsAmount as the total actual value
   const totalSavings = totalBillsAmount;
-  const currentMonthSavings = currentMonthIncome - currentMonthExpenses;
+  
+  // Use the last data point from chart data for "Este Mes" calculation
+  const lastMonthDataPoint = soloChartData.length > 0 ? soloChartData[soloChartData.length - 1] : null;
+  const displayCurrentMonthSavings = lastMonthDataPoint ? lastMonthDataPoint.value : (currentMonthIncome - currentMonthExpenses);
+  
+  // Calculate percentage change between last and penultimate month
+  let displayMonthlySavingsPercentage = 0;
+  let hasValidPercentage = false;
+  
+  if (soloChartData.length >= 2) {
+    const lastMonth = soloChartData[soloChartData.length - 1];
+    const penultimateMonth = soloChartData[soloChartData.length - 2];
+    
+    if (penultimateMonth.value !== 0) {
+      displayMonthlySavingsPercentage = ((lastMonth.value - penultimateMonth.value) / Math.abs(penultimateMonth.value)) * 100;
+      hasValidPercentage = Number.isFinite(displayMonthlySavingsPercentage);
+    }
+  }
+
   
   // Calculate sum of last 6 chart data points for trend display
   const last6MonthsSum = soloChartData.reduce((sum, dataPoint) => sum + dataPoint.value, 0);
+
+  // Calculate accumulated savings data for solo mode
+  const calculateAccumulatedSavings = (): ChartDataPoint[] => {
+    if (months.length === 0) return [];
+    
+    const monthNames = [
+      'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+      'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
+    ];
+    
+    // Get the last 6 months (same as chartData)
+    const last6Months = months.slice(-6);
+    let accumulated = 0;
+    
+    return last6Months.map((month) => {
+      // Simply accumulate the monthlyExpenses field
+      accumulated += month.monthlyExpenses;
+      
+      return {
+        label: monthNames[month.month - 1],
+        value: accumulated
+      };
+    });
+  };
+
+  // Calculate accumulated savings data - this will automatically refresh when months data changes
+  const accumulatedSavingsData = calculateAccumulatedSavings();
+
+  // Debug logging for accumulated savings
+  console.log('Accumulated Savings Debug:', {
+    monthsLength: months.length,
+    accumulatedDataLength: accumulatedSavingsData.length,
+    accumulatedData: accumulatedSavingsData,
+    isLoading,
+    error
+  });
+
+  // Listen for bills refresh events and trigger months data refresh
+  useEffect(() => {
+    if (refreshId && refreshId !== lastRefreshIdRef.current) {
+      // Bills data was refreshed, so refresh months data too
+      lastRefreshIdRef.current = refreshId;
+      refetchMonthsData();
+    }
+  }, [refreshId, refetchMonthsData]);
 
   const handleDataPointPress = (dataPoint: ChartDataPoint) => {
     console.log('Data point pressed:', dataPoint);
@@ -76,127 +144,7 @@ const SavingsScreen: React.FC = () => {
     }).format(amount);
   };
 
-  const renderSoloContent = () => {
-    if (isLoading) {
-      return (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={primaryColor} />
-          <ThemedText style={styles.loadingText}>Cargando datos...</ThemedText>
-        </View>
-      );
-    }
 
-    if (error) {
-      return (
-        <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle" size={48} color={colors.error} />
-          <ThemedText style={styles.errorTitle}>Error al cargar los datos</ThemedText>
-          <ThemedText style={styles.errorMessage}>{error}</ThemedText>
-        </View>
-      );
-    }
-
-    return (
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        <ThemedCard style={styles.card}>
-          <View style={[styles.iconContainer, { backgroundColor: primaryColor }]}>
-            <Ionicons name="person" size={48} color="#ffffff" />
-          </View>
-          <ThemedText style={styles.title}>Ahorros Personales</ThemedText>
-          <ThemedText style={styles.subtitle} variant="secondary">Gestiona tus ahorros individuales</ThemedText>
-          
-          {/* Stats Cards */}
-          <View style={styles.statsContainer}>
-            <ThemedView style={styles.statCard} variant="surface">
-              <ThemedText style={styles.statLabel} variant="secondary">Total Actual</ThemedText>
-              <ThemedText style={styles.statValue}>{formatEuros(totalSavings)}</ThemedText>
-              <View style={styles.trendContainer}>
-                <Ionicons 
-                  name={last6MonthsSum >= 0 ? "trending-up" : "trending-down"} 
-                  size={16} 
-                  color={last6MonthsSum >= 0 ? colors.success : colors.error} 
-                />
-                <ThemedText style={[
-                  styles.trendText, 
-                  { color: last6MonthsSum >= 0 ? colors.success : colors.error }
-                ]}>
-                  {last6MonthsSum >= 0 ? '+' : ''}{formatEuros(last6MonthsSum)}
-                </ThemedText>
-              </View>
-            </ThemedView>
-            
-            <ThemedView style={styles.statCard} variant="surface">
-              <ThemedText style={styles.statLabel} variant="secondary">Este Mes</ThemedText>
-              <ThemedText style={[
-                styles.statValue, 
-                { color: currentMonthSavings >= 0 ? colors.success : colors.error }
-              ]}>
-                {currentMonthSavings >= 0 ? '+' : ''}{formatEuros(currentMonthSavings)}
-              </ThemedText>
-            </ThemedView>
-          </View>
-          
-          {/* Chart Section */}
-          <LinearChart
-            type="line"
-            data={soloChartData}
-            primaryColor={primaryColor}
-            targetValue={objectiveAmount}
-            height={240}
-            title="Evolución de Gastos"
-            subtitle="6 meses"
-            showZeroLine={true}
-            onDataPointPress={handleDataPointPress}
-          />
-        </ThemedCard>
-      </ScrollView>
-    );
-  };
-
-  const renderFamiliaContent = () => (
-    <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-      <ThemedCard style={styles.card}>
-        <View style={[styles.iconContainer, { backgroundColor: secondaryColor }]}>
-          <Ionicons name="people" size={48} color="#ffffff" />
-        </View>
-        <ThemedText style={styles.title}>Ahorros Familiares</ThemedText>
-        <ThemedText style={styles.subtitle} variant="secondary">Gestiona los ahorros de la familia</ThemedText>
-        
-        {/* Stats Cards */}
-        <View style={styles.statsContainer}>
-          <ThemedView style={styles.statCard} variant="surface">
-            <ThemedText style={styles.statLabel} variant="secondary">Total Actual</ThemedText>
-            <ThemedText style={styles.statValue}>{formatEuros(6000)}</ThemedText>
-            <View style={styles.trendContainer}>
-              <Ionicons name="trending-up" size={16} color={secondaryColor} />
-              <ThemedText style={[styles.trendText, { color: secondaryColor }]}>+18.2%</ThemedText>
-            </View>
-          </ThemedView>
-          
-          <ThemedView style={styles.statCard} variant="surface">
-            <ThemedText style={styles.statLabel} variant="secondary">Este Mes</ThemedText>
-            <ThemedText style={styles.statValue}>{formatEuros(800)}</ThemedText>
-            <View style={styles.trendContainer}>
-              <Ionicons name="trending-up" size={16} color={secondaryColor} />
-              <ThemedText style={[styles.trendText, { color: secondaryColor }]}>+20.0%</ThemedText>
-            </View>
-          </ThemedView>
-        </View>
-        
-        {/* Chart Section */}
-        <LinearChart
-          type="line"
-          data={familiaSavingsData}
-          primaryColor={secondaryColor}
-          targetValue={objectiveAmount}
-          height={240}
-          title="Evolución de Ahorros"
-          subtitle="6 meses"
-          onDataPointPress={handleDataPointPress}
-        />
-      </ThemedCard>
-    </ScrollView>
-  );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -208,7 +156,8 @@ const SavingsScreen: React.FC = () => {
                 styles.tabButton,
                 activeTab === 'solo' && { backgroundColor: primaryColor }
               ]}
-            onPress={() => setActiveTab('solo')}
+              activeOpacity={1}
+              onPress={() => setActiveTab('solo')}
           >
             <Ionicons
               name="person"
@@ -233,7 +182,8 @@ const SavingsScreen: React.FC = () => {
                 styles.tabButton,
                 activeTab === 'familia' && { backgroundColor: secondaryColor }
               ]}
-            onPress={() => setActiveTab('familia')}
+              activeOpacity={1}
+              onPress={() => setActiveTab('familia')}
           >
             <Ionicons
               name="people"
@@ -255,7 +205,26 @@ const SavingsScreen: React.FC = () => {
           </ThemedView>
 
         {/* Tab Content -------------------------------------------------------- */}
-        {activeTab === 'solo' ? renderSoloContent() : renderFamiliaContent()}
+        <SavingsContent
+          isLoading={isLoading}
+          error={error}
+          chartData={activeTab === 'solo' ? soloChartData : familiaSavingsData}
+          totalSavings={totalSavings}
+          displayCurrentMonthSavings={displayCurrentMonthSavings}
+          displayMonthlySavingsPercentage={displayMonthlySavingsPercentage}
+          hasValidPercentage={hasValidPercentage}
+          last6MonthsSum={last6MonthsSum}
+          objectiveAmount={objectiveAmount}
+          primaryColor={activeTab === 'solo' ? primaryColor : secondaryColor}
+          onDataPointPress={handleDataPointPress}
+          mode={activeTab}
+          familiaData={activeTab === 'familia' ? {
+            totalSavings: 6000,
+            currentMonthSavings: 800,
+            monthlyPercentage: 20.0
+          } : undefined}
+          accumulatedSavingsData={activeTab === 'solo' ? accumulatedSavingsData : undefined}
+        />
       </ThemedView>
     </SafeAreaView>
   );
@@ -353,34 +322,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     marginLeft: 4,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-  },
-  errorTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 16,
-    textAlign: 'center',
-  },
-  errorMessage: {
-    fontSize: 14,
-    marginTop: 8,
-    textAlign: 'center',
-    opacity: 0.7,
   },
 });
 

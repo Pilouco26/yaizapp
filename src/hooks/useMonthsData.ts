@@ -16,6 +16,9 @@ export interface MonthsData {
   totalIncome: number;
   currentMonthExpenses: number;
   currentMonthIncome: number;
+  currentMonthSavings: number;
+  previousMonthSavings: number;
+  monthlySavingsPercentage: number;
   isLoading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
@@ -100,6 +103,34 @@ export const useMonthsData = (): MonthsData => {
         .reduce((sum, tx) => sum + tx.amount, 0)
     : 0;
 
+  // Calculate current month savings
+  const currentMonthSavings = currentMonthIncome - currentMonthExpenses;
+
+  // Get previous month data for percentage calculation
+  const previousMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+  const previousYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+  
+  const previousMonthData = months.find(
+    month => month.year === previousYear && month.month === previousMonth
+  );
+  
+  const previousMonthExpenses = previousMonthData ? Math.abs(previousMonthData.monthlyExpenses) : 0;
+  const previousMonthIncome = previousMonthData && previousMonthData.transactions 
+    ? previousMonthData.transactions
+        .filter(tx => tx.type === 'INCOME')
+        .reduce((sum, tx) => sum + tx.amount, 0)
+    : 0;
+  
+  const previousMonthSavings = previousMonthIncome - previousMonthExpenses;
+
+  // Calculate percentage as ratio of last month to current month
+  let monthlySavingsPercentage = 0;
+  if (Number.isFinite(currentMonthSavings) && currentMonthSavings !== 0) {
+    monthlySavingsPercentage = (previousMonthSavings / currentMonthSavings) * 100;
+  } else {
+    monthlySavingsPercentage = 0;
+  }
+
   // Prepare chart data (last 6 months)
   const chartData: ChartDataPoint[] = months
     .slice(-6) // Get last 6 months
@@ -115,6 +146,9 @@ export const useMonthsData = (): MonthsData => {
     totalIncome,
     currentMonthExpenses,
     currentMonthIncome,
+    currentMonthSavings,
+    previousMonthSavings,
+    monthlySavingsPercentage,
     isLoading,
     error,
     refetch: fetchMonthsData,

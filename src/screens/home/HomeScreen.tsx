@@ -16,6 +16,7 @@ const HomeScreen: React.FC = () => {
   const {
     objectiveAmount,
     totalBillsAmount,
+    lastMonthExpenses,
     totalAvailable,
     updateObjective,
     refreshBillsData,
@@ -76,11 +77,11 @@ const HomeScreen: React.FC = () => {
               {/* Calculation Breakdown */}
               <ThemedView className="w-full mt-4 p-4 rounded-xl" variant="surface">
                 <View className="flex-row justify-between items-center w-full mb-2">
-                  <ThemedText className="text-base font-medium" variant="secondary">Facturas:</ThemedText>
+                  <ThemedText className="text-base font-medium" variant="secondary">Gastos del mes:</ThemedText>
                   <ThemedText className={`text-base font-semibold min-w-20 text-right ${
-                    totalBillsAmount >= 0 ? 'text-blue-600' : 'text-blue-600'
+                    lastMonthExpenses >= 0 ? 'text-blue-600' : 'text-blue-600'
                   }`}>
-                    {formatCurrency(totalBillsAmount)}
+                    {formatCurrency(lastMonthExpenses)}
                   </ThemedText>
                 </View>
                 <View className="flex-row justify-between items-center w-full mb-2">
