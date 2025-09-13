@@ -14,34 +14,24 @@ export class HealthService {
     try {
       const apiUrl = getFullApiUrlWithAuth(API_CONFIG.ENDPOINTS.HEALTH.BASE);
       
-      console.log('🏥 [HealthService] Checking API health...');
-      console.log('📡 [HealthService] API URL:', apiUrl);
-      
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers: getDefaultHeaders(),
       });
 
-      console.log('📥 [HealthService] Response status:', response.status);
-      console.log('📥 [HealthService] Response headers:', Object.fromEntries(response.headers.entries()));
-
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ [HealthService] Error response:', errorText);
         throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
       }
 
       const data: ApiResponse<HealthResponse> = await response.json();
-      console.log('✅ [HealthService] Success response:', JSON.stringify(data, null, 2));
       
       if (!data.success || !data.data) {
         throw new Error(data.message || 'Failed to get health information');
       }
 
-      console.log('🎉 [HealthService] API health check successful');
       return data.data;
     } catch (error) {
-      console.error('❌ [HealthService] getHealth error:', error);
       throw new Error(`Failed to get health information: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -81,7 +71,6 @@ export class HealthService {
 
       return data.data;
     } catch (error) {
-      console.error('HealthService.searchHealth error:', error);
       throw new Error(`Failed to search health information: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -94,7 +83,6 @@ export class HealthService {
       const health = await this.searchHealth({ type: 'ping' });
       return health.status === 'healthy';
     } catch (error) {
-      console.error('HealthService.ping error:', error);
       return false;
     }
   }
@@ -106,7 +94,6 @@ export class HealthService {
     try {
       return await this.searchHealth({ type: 'detailed' });
     } catch (error) {
-      console.error('HealthService.detailedCheck error:', error);
       throw error;
     }
   }

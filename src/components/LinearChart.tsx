@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, useWindowDimensions } from 'react-native';
-import Svg, { Path, Circle, Line, Text as SvgText, Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
+import Svg, { Path, Circle, Line, Text as SvgText, Defs, LinearGradient, Stop, Rect, G } from 'react-native-svg';
 import { ThemedText, ThemedView } from './ThemeWrapper';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -122,7 +122,8 @@ const LinearChart: React.FC<LinearChartProps> = ({
   const chartWidth = windowWidth - 120; // Account for padding
   const chartHeight = height;
   const padding = 40;
-  const chartAreaWidth = chartWidth - (padding * 2);
+  const leftPadding = 60; // More space for Y-axis labels
+  const chartAreaWidth = chartWidth - (leftPadding + padding);
   const chartAreaHeight = chartHeight - (padding * 2);
   
   const [tooltipPos, setTooltipPos] = useState<{
@@ -130,6 +131,7 @@ const LinearChart: React.FC<LinearChartProps> = ({
     y: number;
     value: string;
     label: string;
+    color: string;
   } | null>(null);
 
   // Format currency helper
@@ -147,14 +149,28 @@ const LinearChart: React.FC<LinearChartProps> = ({
     if (data.length === 0) return { xScale: 0, yScale: 0, minY: 0, maxY: 0 };
     
     const values = data.map(point => point.value);
-    const minY = Math.min(...values, 0);
-    const maxY = Math.max(...values, 0);
-    const yRange = maxY - minY || 1;
+    const dataMinY = Math.min(...values);
+    const dataMaxY = Math.max(...values);
+    
+    // Always include 0 in the range
+    const minY = Math.min(dataMinY, 0);
+    const maxY = Math.max(dataMaxY, 0);
+    
+    // Round up to nice numbers for better Y-axis labels
+    const yRange = maxY - minY;
+    const niceRange = Math.ceil(yRange / 1000) * 1000; // Round up to nearest 1000
+    const niceMinY = Math.floor(minY / 1000) * 1000; // Round down to nearest 1000
+    const niceMaxY = niceMinY + niceRange;
+    
+    // Ensure 0 is always included
+    const adjustedMinY = Math.min(niceMinY, 0);
+    const adjustedMaxY = Math.max(niceMaxY, 0);
+    const finalRange = adjustedMaxY - adjustedMinY || 1;
     
     const xScale = chartAreaWidth / (data.length - 1);
-    const yScale = chartAreaHeight / yRange;
+    const yScale = chartAreaHeight / finalRange;
     
-    return { xScale, yScale, minY, maxY };
+    return { xScale, yScale, minY: adjustedMinY, maxY: adjustedMaxY };
   };
 
   /**
@@ -164,38 +180,20 @@ const LinearChart: React.FC<LinearChartProps> = ({
   const generateSegmentPaths = () => {
     if (data.length < 2) return [] as { path: string; colour: string }[];
     const { xScale, yScale, minY } = getChartDimensions();
+    
+    // Theme-aware line color: white for dark theme, light grey for light theme
+    const lineColor = colors.textPrimary === '#ffffff' ? '#ffffff' : '#9ca3af';
+    
     return data.slice(0, -1).map((curr, idx) => {
       const next = data[idx + 1];
-      const x1 = padding + idx * xScale;
+      const x1 = leftPadding + idx * xScale;
       const y1 = padding + chartAreaHeight - ((curr.value - minY) * yScale);
-      const x2 = padding + (idx + 1) * xScale;
+      const x2 = leftPadding + (idx + 1) * xScale;
       const y2 = padding + chartAreaHeight - ((next.value - minY) * yScale);
-
-      // Determine colour for this segment
-      const goal = targetValue ?? 0;
-      const statusForValue = (v: number) => {
-        if (v >= goal) return 'above';
-        if (v >= 0) return 'between';
-        return 'below';
-      };
-      const status1 = statusForValue(curr.value);
-      const status2 = statusForValue(next.value);
-      // If both statuses match we pick that colour, otherwise default to yellow
-      let colour: string;
-      if (status1 === 'above' && status2 === 'above') {
-        colour = segmentColors.aboveGoal;
-      } else if (status1 === 'below' && status2 === 'below') {
-        colour = segmentColors.belowZero;
-      } else if (status1 === 'between' && status2 === 'between') {
-        colour = segmentColors.betweenGoalAndZero;
-      } else {
-        // Segment crosses thresholds – pick middle colour to indicate change
-        colour = segmentColors.betweenGoalAndZero;
-      }
 
       return {
         path: `M ${x1} ${y1} L ${x2} ${y2}`,
-        colour,
+        colour: lineColor,
       };
     });
   };
@@ -215,9 +213,9 @@ const LinearChart: React.FC<LinearChartProps> = ({
       gridLines.push(
         <Line
           key={`grid-${i}`}
-          x1={padding}
+          x1={leftPadding}
           y1={y}
-          x2={padding + chartAreaWidth}
+          x2={leftPadding + chartAreaWidth}
           y2={y}
           stroke={colors.border}
           strokeWidth={0.5}
@@ -237,32 +235,53 @@ const LinearChart: React.FC<LinearChartProps> = ({
     const { xScale, yScale, minY } = getChartDimensions();
     
     return data.map((point, index) => {
-      const x = padding + (index * xScale);
+      const x = leftPadding + (index * xScale);
       const y = padding + chartAreaHeight - ((point.value - minY) * yScale);
       
+      // Determine point colour based on thresholds
+      const goalRef = typeof targetValue === 'number' ? targetValue : 0;
+      let pointColour: string;
+      if (point.value >= goalRef) {
+        pointColour = segmentColors.aboveGoal; // green
+      } else if (point.value >= 0) {
+        pointColour = segmentColors.betweenGoalAndZero; // yellow
+      } else {
+        pointColour = segmentColors.belowZero; // red
+      }
+
       return (
-        <Circle
-          key={`point-${index}`}
-          cx={x}
-          cy={y}
-          r={6}
-          fill={chartBackgroundColor}
-          stroke={chartPrimaryColor}
-          strokeWidth={3}
-          onPress={() => {
-            if (onDataPointPress) {
-              onDataPointPress(point);
-            }
-            if (showTooltips) {
-              setTooltipPos({
-                x,
-                y,
-                value: formatCurrency(point.value),
-                label: point.label,
-              });
-            }
-          }}
-        />
+        <G key={`point-group-${index}`}>
+          {/* Invisible larger hitbox for better touch interaction */}
+          <Circle
+            cx={x}
+            cy={y}
+            r={20}
+            fill="transparent"
+            onPressIn={() => {
+              if (onDataPointPress) {
+                onDataPointPress(point);
+              }
+              if (showTooltips) {
+                setTooltipPos({
+                  x,
+                  y,
+                  value: formatCurrency(point.value),
+                  label: point.label,
+                  color: pointColour,
+                });
+              }
+            }}
+          />
+          {/* Visual data point */}
+          <Circle
+            cx={x}
+            cy={y}
+            r={6}
+            fill={chartBackgroundColor}
+            stroke={pointColour}
+            strokeWidth={3}
+          />
+        </G>
       );
     });
   };
@@ -271,31 +290,34 @@ const LinearChart: React.FC<LinearChartProps> = ({
   const generateReferenceLines = () => {
     const refs: React.ReactElement[] = [];
     const { yScale, minY, maxY } = getChartDimensions();
-    if (showZeroLine && minY < 0 && maxY > 0) {
+    
+    // Always show zero line when showZeroLine is true, regardless of data range
+    if (showZeroLine) {
       const y0 = padding + chartAreaHeight - ((0 - minY) * yScale);
       refs.push(
         <Line
           key="zero-line"
-          x1={padding}
+          x1={leftPadding}
           y1={y0}
-          x2={padding + chartAreaWidth}
+          x2={leftPadding + chartAreaWidth}
           y2={y0}
-          stroke="#6b7280" // Tailwind gray-500
+          stroke="#ef4444" // Tailwind red-500
           strokeWidth={0.8}
           strokeDasharray="6,4"
         />
       );
     }
+    
     if (typeof targetValue === 'number') {
       const goalY = padding + chartAreaHeight - ((targetValue - minY) * yScale);
       refs.push(
         <Line
           key="goal-line"
-          x1={padding}
+          x1={leftPadding}
           y1={goalY}
-          x2={padding + chartAreaWidth}
+          x2={leftPadding + chartAreaWidth}
           y2={goalY}
-          stroke="#0ea5e9" // cyan-ish primary
+          stroke="#22c55e" // Tailwind green-500
           strokeWidth={0.8}
           strokeDasharray="4,2"
         />
@@ -312,20 +334,27 @@ const LinearChart: React.FC<LinearChartProps> = ({
     const yRange = maxY - minY;
     const labels = [];
     
-    for (let i = 0; i <= 4; i++) {
-      const y = padding + (i * chartAreaHeight / 4);
-      const value = maxY - (i * yRange / 4);
+    // Generate labels that include 0 and are evenly distributed
+    const numLabels = 5; // Number of labels to show
+    const step = yRange / (numLabels - 1);
+    
+    for (let i = 0; i < numLabels; i++) {
+      const value = minY + (i * step);
+      const y = padding + chartAreaHeight - ((value - minY) * (chartAreaHeight / yRange));
+      
+      // Round to nearest 100 for cleaner labels
+      const roundedValue = Math.round(value / 100) * 100;
       
       labels.push(
         <SvgText
           key={`y-label-${i}`}
-          x={padding - 10}
+          x={leftPadding - 10}
           y={y + 4}
           fontSize={10}
           fill={colors.textSecondary}
           textAnchor="end"
         >
-          {formatCurrency(value)}
+          {formatCurrency(roundedValue)}
         </SvgText>
       );
     }
@@ -340,7 +369,7 @@ const LinearChart: React.FC<LinearChartProps> = ({
     const { xScale } = getChartDimensions();
     
     return data.map((point, index) => {
-      const x = padding + (index * xScale);
+      const x = leftPadding + (index * xScale);
       
       return (
         <SvgText
@@ -369,16 +398,10 @@ const LinearChart: React.FC<LinearChartProps> = ({
       
       <ThemedView className="rounded-2xl p-4 items-center relative shadow-lg shadow-black/5" variant="card">
         <Svg width={chartWidth} height={chartHeight}>
-          <Defs>
-            <LinearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0%" stopColor={chartPrimaryColor} stopOpacity="0.3" />
-              <Stop offset="100%" stopColor={chartPrimaryColor} stopOpacity="0.1" />
-            </LinearGradient>
-          </Defs>
           
           {/* Background */}
           <Rect
-            x={padding}
+            x={leftPadding}
             y={padding}
             width={chartAreaWidth}
             height={chartAreaHeight}
@@ -410,11 +433,6 @@ const LinearChart: React.FC<LinearChartProps> = ({
             />
           ))}
           
-          {/* Area fill */}
-          <Path
-            d={`${generateSegmentPaths().map(s => s.path).join(' ')} L ${padding + chartAreaWidth} ${padding + chartAreaHeight} L ${padding} ${padding + chartAreaHeight} Z`}
-            fill="url(#lineGradient)"
-          />
           
           {/* Data points */}
           {generateDataPoints()}
@@ -427,7 +445,7 @@ const LinearChart: React.FC<LinearChartProps> = ({
                 y1={padding}
                 x2={tooltipPos.x}
                 y2={padding + chartAreaHeight}
-                stroke={colors.primary}
+                stroke={tooltipPos.color}
                 strokeWidth={1}
                 strokeDasharray="3,3"
               />
@@ -435,7 +453,7 @@ const LinearChart: React.FC<LinearChartProps> = ({
                 cx={tooltipPos.x}
                 cy={tooltipPos.y}
                 r={4}
-                fill={colors.primary}
+                fill={tooltipPos.color}
               />
             </>
           )}

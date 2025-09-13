@@ -34,7 +34,6 @@ export class NotificationsService {
 
       return data.data;
     } catch (error) {
-      console.error('NotificationsService.getAllNotifications error:', error);
       throw new Error(`Failed to get notifications: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -59,11 +58,6 @@ export class NotificationsService {
 
       const apiUrl = getFullApiUrlWithAuth(`${API_CONFIG.ENDPOINTS.NOTIFICATIONS.SEARCH}?${searchParams.toString()}`);
       
-      console.log('🔔 [NotificationsService] Searching notifications...');
-      console.log('📡 [NotificationsService] API URL:', apiUrl);
-      console.log('🔍 [NotificationsService] Search params:', JSON.stringify(params, null, 2));
-      console.log('🔑 [NotificationsService] Auth token present:', !!authToken);
-      
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers: getDefaultHeaders({
@@ -71,26 +65,19 @@ export class NotificationsService {
         }),
       });
 
-      console.log('📥 [NotificationsService] Response status:', response.status);
-      console.log('📥 [NotificationsService] Response headers:', Object.fromEntries(response.headers.entries()));
-
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ [NotificationsService] Error response:', errorText);
         throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
       }
 
       const data: ApiResponse<Notification[]> = await response.json();
-      console.log('✅ [NotificationsService] Success response:', JSON.stringify(data, null, 2));
       
       if (!data.success || !data.data) {
         throw new Error(data.message || 'Failed to search notifications');
       }
 
-      console.log('🎉 [NotificationsService] Found', data.data.length, 'notifications');
       return data.data;
     } catch (error) {
-      console.error('❌ [NotificationsService] searchNotifications error:', error);
       throw new Error(`Failed to search notifications: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -124,7 +111,6 @@ export class NotificationsService {
 
       return data.data;
     } catch (error) {
-      console.error('NotificationsService.createNotification error:', error);
       throw new Error(`Failed to create notification: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -158,7 +144,6 @@ export class NotificationsService {
 
       return data.data;
     } catch (error) {
-      console.error('NotificationsService.updateNotification error:', error);
       throw new Error(`Failed to update notification: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -189,7 +174,6 @@ export class NotificationsService {
         throw new Error(data.message || 'Failed to delete notification');
       }
     } catch (error) {
-      console.error('NotificationsService.deleteNotification error:', error);
       throw new Error(`Failed to delete notification: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -201,7 +185,6 @@ export class NotificationsService {
     try {
       return await this.searchNotifications({ userId }, authToken);
     } catch (error) {
-      console.error('NotificationsService.getNotificationsByUserId error:', error);
       throw error;
     }
   }
@@ -213,7 +196,6 @@ export class NotificationsService {
     try {
       return await this.searchNotifications({ userId, read: false }, authToken);
     } catch (error) {
-      console.error('NotificationsService.getUnreadNotificationsByUserId error:', error);
       throw error;
     }
   }
@@ -225,7 +207,6 @@ export class NotificationsService {
     try {
       return await this.searchNotifications({ userId, type }, authToken);
     } catch (error) {
-      console.error('NotificationsService.getNotificationsByType error:', error);
       throw error;
     }
   }
@@ -237,7 +218,6 @@ export class NotificationsService {
     try {
       return await this.updateNotification(notificationId, { isRead: true }, authToken);
     } catch (error) {
-      console.error('NotificationsService.markAsRead error:', error);
       throw error;
     }
   }
@@ -249,7 +229,6 @@ export class NotificationsService {
     try {
       return await this.updateNotification(notificationId, { isRead: false }, authToken);
     } catch (error) {
-      console.error('NotificationsService.markAsUnread error:', error);
       throw error;
     }
   }
@@ -267,7 +246,6 @@ export class NotificationsService {
         )
       );
     } catch (error) {
-      console.error('NotificationsService.markAllAsRead error:', error);
       throw error;
     }
   }
@@ -283,7 +261,6 @@ export class NotificationsService {
       
       return notifications.length;
     } catch (error) {
-      console.error('NotificationsService.getNotificationCount error:', error);
       throw error;
     }
   }

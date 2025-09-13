@@ -4,6 +4,7 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -345,41 +346,41 @@ const BillsScreen: React.FC = () => {
                 {totalPages > 1 && (
                   <View className="mt-4 pt-4 border-t border-gray-200">
                     <View className="flex-row justify-between items-center">
-                      {/* Previous Button */}
-                      <ThemedTouchableOpacity
-                        onPress={goToPreviousPage}
-                        disabled={currentPage === 1}
-                        className={`w-12 h-12 rounded-full items-center justify-center ${
-                          currentPage === 1 ? 'opacity-50' : ''
-                        }`}
-                        style={{
-                          backgroundColor: currentPage === 1 ? colors.surface : colors.primary
-                        }}
-                      >
-                        <Ionicons 
-                          name="chevron-back" 
-                          size={24} 
-                          color={currentPage === 1 ? colors.textTertiary : '#ffffff'} 
-                        />
-                      </ThemedTouchableOpacity>
+                      {/* Previous Button - Only show if not on first page */}
+                      {currentPage > 1 && (
+                        <TouchableOpacity
+                          onPress={goToPreviousPage}
+                          className="p-2"
+                          activeOpacity={1}
+                        >
+                          <Ionicons 
+                            name="chevron-back" 
+                            size={28} 
+                            color={colors.primary}
+                          />
+                        </TouchableOpacity>
+                      )}
 
-                      {/* Next Button */}
-                      <ThemedTouchableOpacity
-                        onPress={goToNextPage}
-                        disabled={currentPage === totalPages}
-                        className={`w-12 h-12 rounded-full items-center justify-center ${
-                          currentPage === totalPages ? 'opacity-50' : ''
-                        }`}
-                        style={{
-                          backgroundColor: currentPage === totalPages ? colors.surface : colors.primary
-                        }}
-                      >
-                        <Ionicons 
-                          name="chevron-forward" 
-                          size={24} 
-                          color={currentPage === totalPages ? colors.textTertiary : '#ffffff'} 
-                        />
-                      </ThemedTouchableOpacity>
+                      {/* Spacer when only one arrow is visible */}
+                      {currentPage === 1 && <View className="w-8" />}
+
+                      {/* Next Button - Only show if not on last page */}
+                      {currentPage < totalPages && (
+                        <TouchableOpacity
+                          onPress={goToNextPage}
+                          className="p-2"
+                          activeOpacity={1}
+                        >
+                          <Ionicons 
+                            name="chevron-forward" 
+                            size={28} 
+                            color={colors.primary}
+                          />
+                        </TouchableOpacity>
+                      )}
+
+                      {/* Spacer when only one arrow is visible */}
+                      {currentPage === totalPages && <View className="w-8" />}
                     </View>
                   </View>
                 )}

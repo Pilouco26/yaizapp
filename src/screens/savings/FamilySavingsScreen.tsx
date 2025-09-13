@@ -3,8 +3,10 @@ import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import GenericSavingsScreen from './GenericSavingsScreen';
 import { ChartDataPoint } from '../../components/LinearChart';
+import { useObjective } from '../../hooks/useObjective';
 
 const FamilySavingsScreen: React.FC = () => {
+  const { objectiveAmount } = useObjective();
   const mockFamilyGoal = 10000;
   const mockFamilyCurrent = 7500;
 
@@ -38,6 +40,7 @@ const FamilySavingsScreen: React.FC = () => {
       secondaryColor="#bfdbfe"
       initialGoal={mockFamilyGoal}
       initialCurrent={mockFamilyCurrent}
+      targetGoal={objectiveAmount}
       goalPlaceholder="Nuevo objetivo familiar:"
       currentPlaceholder="Ahorros familiares actuales:"
       chartData={mockFamilyChartData}

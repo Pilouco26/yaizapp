@@ -53,7 +53,6 @@ export class UsersService {
 
       return data.data;
     } catch (error) {
-      console.error('UsersService.getAllUsers error:', error);
       throw new Error(`Failed to get users: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -78,11 +77,6 @@ export class UsersService {
 
       const apiUrl = getFullApiUrlWithAuth(`${API_CONFIG.ENDPOINTS.USERS.SEARCH}?${searchParams.toString()}`);
       
-      console.log('👥 [UsersService] Searching users...');
-      console.log('📡 [UsersService] API URL:', apiUrl);
-      console.log('🔍 [UsersService] Search params:', JSON.stringify(params, null, 2));
-      console.log('🔑 [UsersService] Auth token present:', !!authToken);
-      
       const headers = getDefaultHeaders();
 
       if (authToken) {
@@ -90,19 +84,13 @@ export class UsersService {
         headers['Authorization'] = `Bearer ${authToken}`;
       }
 
-      console.log('📤 [UsersService] Request headers:', headers);
-
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers,
       });
 
-      console.log('📥 [UsersService] Response status:', response.status);
-      console.log('📥 [UsersService] Response headers:', Object.fromEntries(response.headers.entries()));
-
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ [UsersService] Error response:', errorText);
         throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
       }
 
@@ -136,16 +124,13 @@ export class UsersService {
         message: raw.message,
         error: raw.error,
       };
-      console.log('✅ [UsersService] Success response:', JSON.stringify(data, null, 2));
       
       if (!data.success || !data.data) {
         throw new Error(data.message || 'Failed to search users');
       }
 
-      console.log('🎉 [UsersService] Found', data.data.length, 'users');
       return data.data;
     } catch (error) {
-      console.error('❌ [UsersService] searchUsers error:', error);
       throw new Error(`Failed to search users: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -184,7 +169,6 @@ export class UsersService {
 
       return data.data;
     } catch (error) {
-      console.error('UsersService.createUser error:', error);
       throw new Error(`Failed to create user: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -223,7 +207,6 @@ export class UsersService {
 
       return data.data;
     } catch (error) {
-      console.error('UsersService.updateUser error:', error);
       throw new Error(`Failed to update user: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -259,7 +242,6 @@ export class UsersService {
         throw new Error(data.message || 'Failed to delete user');
       }
     } catch (error) {
-      console.error('UsersService.deleteUser error:', error);
       throw new Error(`Failed to delete user: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -272,7 +254,6 @@ export class UsersService {
       const users = await this.searchUsers({ id: userId }, authToken);
       return users.length > 0 ? users[0] : null;
     } catch (error) {
-      console.error('UsersService.getUserById error:', error);
       throw error;
     }
   }
@@ -285,7 +266,6 @@ export class UsersService {
       const users = await this.searchUsers({ email }, authToken);
       return users.length > 0 ? users[0] : null;
     } catch (error) {
-      console.error('UsersService.getUserByEmail error:', error);
       throw error;
     }
   }

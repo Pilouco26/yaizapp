@@ -33,29 +33,19 @@ export const useMonthsData = (): MonthsData => {
   const { isAuthenticated, user } = useAuth();
 
   const fetchMonthsData = async () => {
-    console.log('🔄 [useMonthsData] Starting fetchMonthsData');
-    console.log('🔐 [useMonthsData] isAuthenticated:', isAuthenticated);
-    console.log('👤 [useMonthsData] user:', user);
-    console.log('🆔 [useMonthsData] user_id from constants:', user_id);
-    
     if (!isAuthenticated || !user) {
-      console.log('❌ [useMonthsData] User not authenticated, setting error');
       setError('Usuario no autenticado');
       setIsLoading(false);
       return;
     }
 
     try {
-      console.log('⏳ [useMonthsData] Setting loading state and clearing error');
       setIsLoading(true);
       setError(null);
 
       // Use the hardcoded user_id from constants for now
       // In a real app, you'd use the authenticated user's ID
-      console.log('🚀 [useMonthsData] Calling MonthsService.getMonthsByUserId with userId:', user_id);
       const monthsData = await MonthsService.getMonthsByUserId(user_id, 'mock-token');
-      console.log('✅ [useMonthsData] Received months data:', monthsData);
-      console.log('📊 [useMonthsData] First month sample:', monthsData[0]);
       
       // Sort months by year and month
       const sortedMonths = monthsData.sort((a, b) => {
@@ -64,17 +54,12 @@ export const useMonthsData = (): MonthsData => {
         }
         return a.month - b.month;
       });
-      console.log('📊 [useMonthsData] Sorted months:', sortedMonths);
-      console.log('📊 [useMonthsData] Monthly expenses from first month:', sortedMonths[0]?.monthlyExpenses);
 
       setMonths(sortedMonths);
-      console.log('🎉 [useMonthsData] Successfully set months data');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al cargar los datos';
-      console.error('❌ [useMonthsData] Error fetching months data:', err);
       setError(errorMessage);
     } finally {
-      console.log('🏁 [useMonthsData] Setting loading to false');
       setIsLoading(false);
     }
   };
@@ -85,7 +70,6 @@ export const useMonthsData = (): MonthsData => {
 
   // Calculate totals from monthlyExpenses and transactions
   const totalExpenses = months.reduce((sum, month) => sum + Math.abs(month.monthlyExpenses), 0);
-  console.log('💰 [useMonthsData] Total expenses calculated:', totalExpenses);
   
   // Calculate total income from transactions
   const totalIncome = months.reduce((sum, month) => {
@@ -97,7 +81,6 @@ export const useMonthsData = (): MonthsData => {
     }
     return sum;
   }, 0);
-  console.log('💰 [useMonthsData] Total income calculated:', totalIncome);
 
   // Get current month data
   const currentDate = new Date();

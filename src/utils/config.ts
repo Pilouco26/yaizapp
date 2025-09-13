@@ -139,45 +139,33 @@ export function getFullApiUrl(endpoint: string, currentNetwork?: string): string
 // Helper function to get full API URL with apikey authentication
 export function getFullApiUrlWithAuth(endpoint: string, currentNetwork?: string): string {
   const baseUrl = API_CONFIG.BASE_URL;
-  console.log('🌐 [getFullApiUrlWithAuth] Base URL:', baseUrl);
-  console.log('🎯 [getFullApiUrlWithAuth] Endpoint:', endpoint);
   
   const authConfig = getApiAuthConfig();
-  console.log('🔐 [getFullApiUrlWithAuth] Auth config:', authConfig);
 
   // Prefer header-based authentication; simply return the base URL joined with the endpoint.
   // The actual header will be injected by getDefaultHeaders().
   if (authConfig) {
     const fullUrl = `${baseUrl}${endpoint}`;
-    console.log('✅ [getFullApiUrlWithAuth] Returning authenticated URL:', fullUrl);
     return fullUrl;
   }
 
   // Fallback: if no auth configuration exist, keep previous behaviour of unauthenticated URL
   const fullUrl = `${baseUrl}${endpoint}`;
-  console.log('⚠️ [getFullApiUrlWithAuth] No auth config, returning unauthenticated URL:', fullUrl);
   return fullUrl;
 }
 
 // Helper function to get default headers
 export function getDefaultHeaders(additionalHeaders: Record<string, string> = {}): Record<string, string> {
-  console.log('📋 [getDefaultHeaders] Starting to build headers');
-  console.log('📋 [getDefaultHeaders] Additional headers:', additionalHeaders);
-  
   // Base headers required for all requests
   const baseHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
   };
-  console.log('📋 [getDefaultHeaders] Base headers:', baseHeaders);
 
   // If API authentication is configured, inject the auth header automatically.
   // Many backend endpoints expect a header where the KEY is stored in `API_KEY` (e.g. "auth")
   // and the VALUE is stored in `API_VALUE`.
   if (API_CONFIG.API_KEY && API_CONFIG.API_VALUE) {
-    console.log('🔐 [getDefaultHeaders] Adding auth header:', API_CONFIG.API_KEY, '=', API_CONFIG.API_VALUE);
     baseHeaders[API_CONFIG.API_KEY] = API_CONFIG.API_VALUE;
-  } else {
-    console.log('⚠️ [getDefaultHeaders] No auth config available');
   }
 
   // Merge with any caller-provided headers (caller headers take precedence)
@@ -185,25 +173,18 @@ export function getDefaultHeaders(additionalHeaders: Record<string, string> = {}
     ...baseHeaders,
     ...additionalHeaders,
   };
-  console.log('✅ [getDefaultHeaders] Final headers:', headers);
 
   return headers;
 }
 
 // Helper function to get API authentication configuration
 export function getApiAuthConfig(): { key: string; value: string } | null {
-  // Debug environment variables
-  console.log('🔧 [getApiAuthConfig] API_CONFIG.API_KEY:', API_CONFIG.API_KEY);
-  console.log('🔧 [getApiAuthConfig] API_CONFIG.API_VALUE:', API_CONFIG.API_VALUE);
-
   if (API_CONFIG.API_KEY && API_CONFIG.API_VALUE) {
-    console.log('✅ [getApiAuthConfig] Auth config found, returning auth object');
     return {
       key: API_CONFIG.API_KEY,
       value: API_CONFIG.API_VALUE,
     };
   } else {
-    console.log('❌ [getApiAuthConfig] No auth config found, returning null');
     return null;
   }
 }

@@ -34,7 +34,6 @@ export class MonthsService {
 
       return data.data;
     } catch (error) {
-      console.error('MonthsService.getAllMonths error:', error);
       throw new Error(`Failed to get months: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -76,51 +75,36 @@ export class MonthsService {
         headers,
       });
 
-      console.log('📥 [MonthsService] Response received:');
-      console.log('   Status:', response.status);
-      console.log('   Status Text:', response.statusText);
-      console.log('   Headers:', Object.fromEntries(response.headers.entries()));
-
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ [MonthsService] HTTP Error Response:', errorText);
         throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
       }
 
       const responseText = await response.text();
-      console.log('📄 [MonthsService] Raw response text:', responseText);
       
       let data: ApiResponse<Month[]>;
       try {
         data = JSON.parse(responseText);
-        console.log('✅ [MonthsService] Parsed response data:', JSON.stringify(data, null, 2));
       } catch (parseError) {
-        console.error('❌ [MonthsService] JSON Parse Error:', parseError);
-        console.error('❌ [MonthsService] Raw response that failed to parse:', responseText);
         throw new Error(`Failed to parse response as JSON: ${parseError instanceof Error ? parseError.message : 'Unknown parse error'}`);
       }
       
       // Check if we have data array directly (API might return data directly without success wrapper)
       if (Array.isArray(data)) {
-        console.log('🎉 [MonthsService] Successfully retrieved months data (direct array):', data.length, 'months');
         return data;
       }
       
       // Check if API returns data without success wrapper (just {data: [...]})
       if (data.data && Array.isArray(data.data) && data.success === undefined) {
-        console.log('🎉 [MonthsService] Successfully retrieved months data (data wrapper without success):', data.data.length, 'months');
         return data.data;
       }
       
       if (!data.success || !data.data) {
-        console.error('❌ [MonthsService] API returned unsuccessful response:', data);
         throw new Error(data.message || 'Failed to search months');
       }
 
-      console.log('🎉 [MonthsService] Successfully retrieved months data:', data.data.length, 'months');
       return data.data;
     } catch (error) {
-      console.error('❌ [MonthsService] searchMonths error:', error);
       throw new Error(`Failed to search months: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -154,7 +138,6 @@ export class MonthsService {
 
       return data.data;
     } catch (error) {
-      console.error('MonthsService.createMonth error:', error);
       throw new Error(`Failed to create month: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -188,7 +171,6 @@ export class MonthsService {
 
       return data.data;
     } catch (error) {
-      console.error('MonthsService.updateMonth error:', error);
       throw new Error(`Failed to update month: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -219,7 +201,6 @@ export class MonthsService {
         throw new Error(data.message || 'Failed to delete month');
       }
     } catch (error) {
-      console.error('MonthsService.deleteMonth error:', error);
       throw new Error(`Failed to delete month: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -231,7 +212,6 @@ export class MonthsService {
     try {
       return await this.searchMonths({ userId }, authToken);
     } catch (error) {
-      console.error('MonthsService.getMonthsByUserId error:', error);
       throw error;
     }
   }
@@ -244,7 +224,6 @@ export class MonthsService {
       const months = await this.searchMonths({ userId, year, month }, authToken);
       return months.length > 0 ? months[0] : null;
     } catch (error) {
-      console.error('MonthsService.getMonthByUserAndDate error:', error);
       throw error;
     }
   }
@@ -256,7 +235,6 @@ export class MonthsService {
     try {
       return await this.searchMonths({ userId, expensesAbove: amount }, authToken);
     } catch (error) {
-      console.error('MonthsService.getMonthsWithExpensesAbove error:', error);
       throw error;
     }
   }

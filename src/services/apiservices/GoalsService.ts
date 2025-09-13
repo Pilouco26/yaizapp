@@ -34,7 +34,6 @@ export class GoalsService {
 
       return data.data;
     } catch (error) {
-      console.error('GoalsService.getAllGoals error:', error);
       throw new Error(`Failed to get goals: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -62,11 +61,6 @@ export class GoalsService {
 
       const apiUrl = getFullApiUrlWithAuth(`${API_CONFIG.ENDPOINTS.GOALS.SEARCH}?${searchParams.toString()}`);
       
-      console.log('🎯 [GoalsService] Searching goals...');
-      console.log('📡 [GoalsService] API URL:', apiUrl);
-      console.log('🔍 [GoalsService] Search params:', JSON.stringify(params, null, 2));
-      console.log('🔑 [GoalsService] Auth token present:', !!authToken);
-      
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers: getDefaultHeaders({
@@ -74,26 +68,19 @@ export class GoalsService {
         }),
       });
 
-      console.log('📥 [GoalsService] Response status:', response.status);
-      console.log('📥 [GoalsService] Response headers:', Object.fromEntries(response.headers.entries()));
-
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ [GoalsService] Error response:', errorText);
         throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
       }
 
       const data: ApiResponse<Goal[]> = await response.json();
-      console.log('✅ [GoalsService] Success response:', JSON.stringify(data, null, 2));
       
       if (!data.success || !data.data) {
         throw new Error(data.message || 'Failed to search goals');
       }
 
-      console.log('🎉 [GoalsService] Found', data.data.length, 'goals');
       return data.data;
     } catch (error) {
-      console.error('❌ [GoalsService] searchGoals error:', error);
       throw new Error(`Failed to search goals: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -127,7 +114,6 @@ export class GoalsService {
 
       return data.data;
     } catch (error) {
-      console.error('GoalsService.createGoal error:', error);
       throw new Error(`Failed to create goal: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -161,7 +147,6 @@ export class GoalsService {
 
       return data.data;
     } catch (error) {
-      console.error('GoalsService.updateGoal error:', error);
       throw new Error(`Failed to update goal: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -192,7 +177,6 @@ export class GoalsService {
         throw new Error(data.message || 'Failed to delete goal');
       }
     } catch (error) {
-      console.error('GoalsService.deleteGoal error:', error);
       throw new Error(`Failed to delete goal: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -204,7 +188,6 @@ export class GoalsService {
     try {
       return await this.searchGoals({ userId }, authToken);
     } catch (error) {
-      console.error('GoalsService.getGoalsByUserId error:', error);
       throw error;
     }
   }
@@ -216,7 +199,6 @@ export class GoalsService {
     try {
       return await this.searchGoals({ userId, active: true }, authToken);
     } catch (error) {
-      console.error('GoalsService.getActiveGoalsByUserId error:', error);
       throw error;
     }
   }
@@ -228,7 +210,6 @@ export class GoalsService {
     try {
       return await this.searchGoals({ userId, minAmount, maxAmount }, authToken);
     } catch (error) {
-      console.error('GoalsService.getGoalsByAmountRange error:', error);
       throw error;
     }
   }
@@ -240,7 +221,6 @@ export class GoalsService {
     try {
       return await this.updateGoal(goalId, { currentAmount }, authToken);
     } catch (error) {
-      console.error('GoalsService.updateGoalProgress error:', error);
       throw error;
     }
   }
@@ -252,7 +232,6 @@ export class GoalsService {
     try {
       return await this.updateGoal(goalId, { isActive: false }, authToken);
     } catch (error) {
-      console.error('GoalsService.completeGoal error:', error);
       throw error;
     }
   }

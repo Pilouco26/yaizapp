@@ -6,6 +6,7 @@ import LinearChart, { ChartDataPoint } from '../../components/LinearChart';
 import { ThemedView, ThemedText, ThemedTouchableOpacity, ThemedScrollView, ThemedCard } from '../../components/ThemeWrapper';
 import { EnhancedInput } from '../../components/EnhancedInput';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useBillsContext } from '../../contexts/BillsContext';
 
 export interface GenericSavingsScreenProps {
   /* Icon shown in the coloured circle at the very top */
@@ -63,6 +64,12 @@ export const renderSavingsContent = ({
   onDataPointPress,
   targetGoal,
 }: SavingsContentProps) => {
+  const { totalBillsAmount } = useBillsContext();
+  const { colors } = useTheme();
+  
+  // Calculate sum of last 6 chart data points for trend display
+  const last6MonthsSum = chartData.reduce((sum, dataPoint) => sum + dataPoint.value, 0);
+  
   const formatEuros = (amount: number): string => {
     return new Intl.NumberFormat('es-ES', {
       style: 'currency',
@@ -88,10 +95,19 @@ export const renderSavingsContent = ({
         <View className="flex-row justify-between mb-6">
           <ThemedView className="flex-1 p-4 rounded-xl mx-1" variant="surface">
             <ThemedText className="text-xs font-medium mb-1" variant="secondary">Total Actual</ThemedText>
-            <ThemedText className="text-lg font-bold mb-1">{formatEuros(totalAmount)}</ThemedText>
+            <ThemedText className="text-lg font-bold mb-1">{formatEuros(totalBillsAmount)}</ThemedText>
             <View className="flex-row items-center">
-              <Ionicons name="trending-up" size={16} color={primaryColor} />
-              <ThemedText className="text-xs font-semibold ml-1" style={{ color: primaryColor }}>+12.5%</ThemedText>
+              <Ionicons 
+                name={last6MonthsSum >= 0 ? "trending-up" : "trending-down"} 
+                size={16} 
+                color={last6MonthsSum >= 0 ? colors.success : colors.error} 
+              />
+              <ThemedText 
+                className="text-xs font-semibold ml-1" 
+                style={{ color: last6MonthsSum >= 0 ? colors.success : colors.error }}
+              >
+                {last6MonthsSum >= 0 ? '+' : ''}{formatEuros(last6MonthsSum)}
+              </ThemedText>
             </View>
           </ThemedView>
           
@@ -141,9 +157,10 @@ const GenericSavingsScreen: React.FC<GenericSavingsScreenProps> = ({
   const [currentInput, setCurrentInput] = useState<string>('');
   const [isUpdatingGoal, setIsUpdatingGoal] = useState(false);
   const { colors } = useTheme();
+  const { totalBillsAmount } = useBillsContext();
 
   const goal = initialGoal;
-  const current = initialCurrent;
+  const current = totalBillsAmount; // Use bills data instead of initialCurrent
 
   const handleUpdateGoal = () => {
     const newGoal = parseFloat(goalInput);

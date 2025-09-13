@@ -11,6 +11,8 @@ import LinearChart, { ChartDataPoint } from '../../components/LinearChart';
 import { ThemedView, ThemedText, ThemedTouchableOpacity, ThemedCard } from '../../components/ThemeWrapper';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useMonthsData } from '../../hooks/useMonthsData';
+import { useObjective } from '../../hooks/useObjective';
+import { useBillsContext } from '../../contexts/BillsContext';
 
 // Types -----------------------------------------------------------------------
 
@@ -47,14 +49,19 @@ const SavingsScreen: React.FC = () => {
     isLoading, 
     error 
   } = useMonthsData();
+  const { objectiveAmount } = useObjective();
+  const { totalBillsAmount } = useBillsContext();
 
   // Theme-aware colors
   const primaryColor = theme === 'light' ? PRIMARY_COLOR_LIGHT : PRIMARY_COLOR_DARK;
   const secondaryColor = theme === 'light' ? SECONDARY_COLOR_LIGHT : SECONDARY_COLOR_DARK;
 
-  // Calculate savings
-  const totalSavings = totalIncome - totalExpenses;
+  // Calculate savings - use totalBillsAmount as the total actual value
+  const totalSavings = totalBillsAmount;
   const currentMonthSavings = currentMonthIncome - currentMonthExpenses;
+  
+  // Calculate sum of last 6 chart data points for trend display
+  const last6MonthsSum = soloChartData.reduce((sum, dataPoint) => sum + dataPoint.value, 0);
 
   const handleDataPointPress = (dataPoint: ChartDataPoint) => {
     console.log('Data point pressed:', dataPoint);
@@ -102,38 +109,30 @@ const SavingsScreen: React.FC = () => {
           <View style={styles.statsContainer}>
             <ThemedView style={styles.statCard} variant="surface">
               <ThemedText style={styles.statLabel} variant="secondary">Total Actual</ThemedText>
-              <ThemedText style={styles.statValue}>{formatEuros(Math.max(0, totalSavings))}</ThemedText>
+              <ThemedText style={styles.statValue}>{formatEuros(totalSavings)}</ThemedText>
               <View style={styles.trendContainer}>
                 <Ionicons 
-                  name={totalSavings >= 0 ? "trending-up" : "trending-down"} 
+                  name={last6MonthsSum >= 0 ? "trending-up" : "trending-down"} 
                   size={16} 
-                  color={totalSavings >= 0 ? colors.success : colors.error} 
+                  color={last6MonthsSum >= 0 ? colors.success : colors.error} 
                 />
                 <ThemedText style={[
                   styles.trendText, 
-                  { color: totalSavings >= 0 ? colors.success : colors.error }
+                  { color: last6MonthsSum >= 0 ? colors.success : colors.error }
                 ]}>
-                  {totalSavings >= 0 ? '+' : ''}{formatEuros(totalSavings)}
+                  {last6MonthsSum >= 0 ? '+' : ''}{formatEuros(last6MonthsSum)}
                 </ThemedText>
               </View>
             </ThemedView>
             
             <ThemedView style={styles.statCard} variant="surface">
               <ThemedText style={styles.statLabel} variant="secondary">Este Mes</ThemedText>
-              <ThemedText style={styles.statValue}>{formatEuros(Math.max(0, currentMonthSavings))}</ThemedText>
-              <View style={styles.trendContainer}>
-                <Ionicons 
-                  name={currentMonthSavings >= 0 ? "trending-up" : "trending-down"} 
-                  size={16} 
-                  color={currentMonthSavings >= 0 ? colors.success : colors.error} 
-                />
-                <ThemedText style={[
-                  styles.trendText, 
-                  { color: currentMonthSavings >= 0 ? colors.success : colors.error }
-                ]}>
-                  {currentMonthSavings >= 0 ? '+' : ''}{formatEuros(currentMonthSavings)}
-                </ThemedText>
-              </View>
+              <ThemedText style={[
+                styles.statValue, 
+                { color: currentMonthSavings >= 0 ? colors.success : colors.error }
+              ]}>
+                {currentMonthSavings >= 0 ? '+' : ''}{formatEuros(currentMonthSavings)}
+              </ThemedText>
             </ThemedView>
           </View>
           
@@ -142,6 +141,7 @@ const SavingsScreen: React.FC = () => {
             type="line"
             data={soloChartData}
             primaryColor={primaryColor}
+            targetValue={objectiveAmount}
             height={240}
             title="Evolución de Gastos"
             subtitle="6 meses"
@@ -188,6 +188,7 @@ const SavingsScreen: React.FC = () => {
           type="line"
           data={familiaSavingsData}
           primaryColor={secondaryColor}
+          targetValue={objectiveAmount}
           height={240}
           title="Evolución de Ahorros"
           subtitle="6 meses"

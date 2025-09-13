@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import GenericSavingsScreen from './GenericSavingsScreen';
 import { useMonthsData } from '../../hooks/useMonthsData';
+import { useObjective } from '../../hooks/useObjective';
 import { useTheme } from '../../contexts/ThemeContext';
 
 const IndividualSavingsScreen: React.FC = () => {
@@ -17,6 +18,7 @@ const IndividualSavingsScreen: React.FC = () => {
     isLoading, 
     error 
   } = useMonthsData();
+  const { objectiveAmount } = useObjective();
   
   // Calculate savings (income - expenses)
   const totalSavings = totalIncome - totalExpenses;
@@ -24,7 +26,7 @@ const IndividualSavingsScreen: React.FC = () => {
   
   // Mock goal for now - in a real app this would come from GoalsService
   const mockGoal = 5000;
-  const currentSavings = Math.max(0, totalSavings); // Ensure non-negative
+  const currentSavings = totalSavings; // Allow negative values
 
   const formatEuros = (amount: number): string => {
     return new Intl.NumberFormat('es-ES', {
@@ -69,7 +71,7 @@ const IndividualSavingsScreen: React.FC = () => {
       secondaryColor="#bae6fd"
       initialGoal={mockGoal}
       initialCurrent={currentSavings}
-      targetGoal={mockGoal}
+      targetGoal={objectiveAmount}
       goalPlaceholder="Nuevo objetivo de ahorro:"
       currentPlaceholder="Ahorros actuales:"
       chartData={chartData}
@@ -107,11 +109,9 @@ const IndividualSavingsScreen: React.FC = () => {
           <Text style={{ fontSize: 20, fontWeight: 'bold', color: currentSavings >= 0 ? colors.success : colors.error }}>
             {formatEuros(currentSavings)}
           </Text>
-          {currentMonthSavings !== 0 && (
-            <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 4 }}>
-              Este mes: {formatEuros(currentMonthSavings)}
-            </Text>
-          )}
+          <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 4 }}>
+            Este mes: {formatEuros(currentMonthSavings)}
+          </Text>
         </View>
       </View>
 
