@@ -11,7 +11,6 @@ import { useTheme } from '../../contexts/ThemeContext';
 const HomeScreen: React.FC = () => {
   const [objectiveInput, setObjectiveInput] = useState<string>('');
   const [isUpdatingObjective, setIsUpdatingObjective] = useState(false);
-  const [isRefreshingBills, setIsRefreshingBills] = useState(false);
   const { colors } = useTheme();
   const {
     objectiveAmount,
@@ -19,7 +18,6 @@ const HomeScreen: React.FC = () => {
     lastMonthExpenses,
     totalAvailable,
     updateObjective,
-    refreshBillsData,
   } = useObjective();
 
   const handleUpdateObjective = async () => {
@@ -41,17 +39,6 @@ const HomeScreen: React.FC = () => {
     }
   };
 
-  const handleRefreshBills = async () => {
-    setIsRefreshingBills(true);
-    try {
-      await refreshBillsData();
-      Alert.alert('Éxito', 'Facturas actualizadas correctamente');
-    } catch (error) {
-      Alert.alert('Error', 'No se pudieron actualizar las facturas');
-    } finally {
-      setIsRefreshingBills(false);
-    }
-  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -167,24 +154,6 @@ const HomeScreen: React.FC = () => {
               </ThemedText>
             </ThemedCard>
 
-            {/* Refresh Button */}
-            <ThemedTouchableOpacity 
-              className={`flex-row items-center px-6 py-4 rounded-full shadow-md shadow-black/20 ${
-                isRefreshingBills ? 'opacity-70' : ''
-              }`}
-              variant="primary"
-              onPress={handleRefreshBills}
-              disabled={isRefreshingBills}
-            >
-              <Ionicons 
-                name={isRefreshingBills ? "refresh" : "refresh-outline"} 
-                size={20} 
-                color="#ffffff" 
-              />
-              <ThemedText className="text-base font-semibold ml-2 uppercase tracking-wide" style={{ color: '#ffffff' }}>
-                {isRefreshingBills ? 'Actualizando...' : 'Actualizar Facturas'}
-              </ThemedText>
-            </ThemedTouchableOpacity>
           </View>
         </ThemedScrollView>
       </ThemedView>

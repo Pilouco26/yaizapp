@@ -1,0 +1,57 @@
+import React from 'react';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useTheme } from '../contexts/ThemeContext';
+import TabNavigator from './TabNavigator';
+import ConfigurationScreen from '../screens/configuration/ConfigurationScreen';
+import BankScreen from '../screens/bank/BankScreen';
+
+export type RootStackParamList = {
+  MainTabs: undefined;
+  Configuration: undefined;
+  Bank: undefined;
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
+const StackNavigator: React.FC = () => {
+  const { colors, theme } = useTheme();
+
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: colors.card,
+        },
+        headerTintColor: colors.text,
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+        headerBackTitleVisible: false,
+      }}
+    >
+      <Stack.Screen 
+        name="MainTabs" 
+        component={TabNavigator}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="Configuration" 
+        component={ConfigurationScreen}
+        options={{ 
+          title: 'Configuración',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen 
+        name="Bank" 
+        component={BankScreen}
+        options={{ 
+          title: 'Banco',
+          headerShown: true,
+        }}
+      />
+    </Stack.Navigator>
+  );
+};
+
+export default StackNavigator;

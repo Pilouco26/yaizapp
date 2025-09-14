@@ -113,15 +113,6 @@ const SavingsScreen: React.FC = () => {
   // Calculate accumulated savings data - this will automatically refresh when months data changes
   const accumulatedSavingsData = calculateAccumulatedSavings();
 
-  // Debug logging for accumulated savings
-  console.log('Accumulated Savings Debug:', {
-    monthsLength: months.length,
-    accumulatedDataLength: accumulatedSavingsData.length,
-    accumulatedData: accumulatedSavingsData,
-    isLoading,
-    error
-  });
-
   // Listen for bills refresh events and trigger months data refresh
   useEffect(() => {
     if (refreshId && refreshId !== lastRefreshIdRef.current) {

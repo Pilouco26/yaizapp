@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -13,6 +14,7 @@ import { User as ApiUser } from '../../services/types';
 const ProfileScreen: React.FC = () => {
   const { colors, theme, toggleTheme } = useTheme();
   const { logout, user } = useAuth();
+  const navigation = useNavigation();
   const [authProvider, setAuthProvider] = useState<string>('direct');
   const [apiUser, setApiUser] = useState<ApiUser | null>(null);
 
@@ -86,6 +88,10 @@ const ProfileScreen: React.FC = () => {
     }
   };
 
+  const handleConfigurationPress = () => {
+    navigation.navigate('Configuration' as never);
+  };
+
   const handleLogout = async () => {
     Alert.alert(
       'Cerrar Sesión',
@@ -140,6 +146,8 @@ const ProfileScreen: React.FC = () => {
               <ThemedTouchableOpacity 
                 className="flex-row items-center p-4 rounded-xl mb-3"
                 onPress={toggleTheme}
+                activeOpacity={1}
+                style={{ opacity: 1 }}
               >
                 <Ionicons 
                   name={theme === 'light' ? 'moon' : 'sunny'} 
@@ -159,6 +167,7 @@ const ProfileScreen: React.FC = () => {
               
               <ThemedTouchableOpacity 
                 className="flex-row items-center p-4 rounded-xl mb-3"
+                onPress={handleConfigurationPress}
               >
                 <Ionicons name="settings" size={24} color={colors.textSecondary} />
                 <ThemedText className="text-base ml-3 font-medium">
