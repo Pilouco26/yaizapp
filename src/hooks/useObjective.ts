@@ -9,23 +9,15 @@ const OBJECTIVE_STORAGE_KEY = 'objective_amount';
 export const useObjective = () => {
   const [objectiveAmount, setObjectiveAmount] = useState<number>(0);
   const { totalBillsAmount, refreshBills } = useBillsContext();
-  const { months } = useMonthsData();
+  const { chartData } = useMonthsData();
 
-  // Get last month's monthly expenses
+  // Get last month's monthly expenses from chart data (last data point)
   const getLastMonthExpenses = () => {
-    if (months.length === 0) return 0;
+    if (chartData.length === 0) return 0;
     
-    // Sort months by year and month to get the most recent
-    const sortedMonths = [...months].sort((a, b) => {
-      if (a.year !== b.year) {
-        return a.year - b.year;
-      }
-      return b.month - a.month; // Descending order to get most recent first
-    });
-    
-    // Get the most recent month (last month)
-    const lastMonth = sortedMonths[0];
-    return lastMonth ? Math.abs(lastMonth.monthlyExpenses) : 0;
+    // Get the last data point from chart data (most recent month)
+    const lastDataPoint = chartData[chartData.length - 1];
+    return lastDataPoint ? lastDataPoint.value : 0;
   };
 
   const lastMonthExpenses = getLastMonthExpenses();

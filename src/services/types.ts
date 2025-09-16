@@ -64,6 +64,7 @@ export interface UpdateUserRequest {
   email?: string;
   name?: string;
   isActive?: boolean;
+  bankId?: string;
 }
 
 export interface UserSearchParams {

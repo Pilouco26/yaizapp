@@ -199,13 +199,15 @@ export class UsersService {
         throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
       }
 
-      const data: ApiResponse<User> = await response.json();
+      const data: any = await response.json();
       
-      if (!data.success || !data.data) {
+      // Use response status to determine success instead of checking for success field
+      if (response.status >= 200 && response.status < 300) {
+        // Return the data directly since the API returns the user object directly
+        return data.data || data;
+      } else {
         throw new Error(data.message || 'Failed to update user');
       }
-
-      return data.data;
     } catch (error) {
       throw new Error(`Failed to update user: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }

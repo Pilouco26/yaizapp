@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { 
   View, 
   ActivityIndicator, 
@@ -10,6 +10,7 @@ import {
   StyleSheet
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as LocalAuthentication from 'expo-local-authentication';
 import { useTheme } from '../../contexts/ThemeContext';
 import { ThemedView, ThemedText, ThemedTouchableOpacity } from '../../components/ThemeWrapper';
 
@@ -17,6 +18,7 @@ interface LoginScreenProps {
   onLogin: (email: string, password: string) => Promise<void>;
   onSignup: (name: string, email: string, password: string) => Promise<void>;
   onMetaLogin?: () => Promise<void>;
+  onBiometricLogin?: () => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -36,6 +38,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
   onLogin, 
   onSignup, 
   onMetaLogin, 
+  onBiometricLogin,
   isLoading = false 
 }) => {
   const { colors } = useTheme();
@@ -48,6 +51,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
   });
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
+  const [biometricType, setBiometricType] = useState<string>('');
 
   // Password requirements
   const passwordRequirements = [
@@ -57,6 +62,95 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
     { text: 'Un número', met: false },
     { text: 'Un carácter especial', met: false }
   ];
+
+  // Check biometric availability on component mount
+  useEffect(() => {
+    checkBiometricAvailability();
+  }, []);
+
+  // Check if biometric authentication is available
+  const checkBiometricAvailability = useCallback(async () => {
+    try {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      
+      console.log('Biometric check - Hardware:', hasHardware, 'Enrolled:', isEnrolled);
+      
+      if (hasHardware && isEnrolled) {
+        const biometricTypes = await LocalAuthentication.supportedAuthenticationTypesAsync();
+        console.log('Supported biometric types:', biometricTypes);
+        
+        // Only enable if Face ID or Touch ID is available
+        const hasFaceID = biometricTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION);
+        const hasTouchID = biometricTypes.includes(LocalAuthentication.AuthenticationType.FINGERPRINT);
+        
+        console.log('Face ID available:', hasFaceID, 'Touch ID available:', hasTouchID);
+        
+        if (hasFaceID || hasTouchID) {
+          setIsBiometricAvailable(true);
+          
+          if (hasFaceID) {
+            setBiometricType('Face ID');
+            console.log('Face ID enabled');
+          } else if (hasTouchID) {
+            setBiometricType('Touch ID');
+            console.log('Touch ID enabled');
+          }
+        }
+      }
+    } catch (error) {
+      console.log('Error checking biometric availability:', error);
+    }
+  }, []);
+
+  // Handle biometric authentication
+  const handleBiometricAuth = useCallback(async () => {
+    if (!isBiometricAvailable || !onBiometricLogin) return;
+
+    console.log('Starting biometric authentication...');
+    console.log('Biometric type:', biometricType);
+
+    try {
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Usa Face ID para acceder a YaizApp',
+        fallbackLabel: 'Usar contraseña',
+        disableDeviceFallback: true, // This forces biometric-only authentication
+        cancelLabel: 'Cancelar',
+      });
+
+      console.log('Biometric authentication result:', result);
+
+      if (result.success) {
+        console.log('Biometric authentication successful');
+        await onBiometricLogin();
+      } else if (result.error === 'user_cancel') {
+        console.log('User cancelled biometric authentication');
+        // User cancelled, no need to show error
+        return;
+      } else if (result.error === 'not_available') {
+        console.log('Biometric not available');
+        Alert.alert(
+          'Biometría no disponible',
+          'Face ID no está disponible en este momento. Intenta de nuevo.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        console.log('Biometric authentication failed:', result.error);
+        Alert.alert(
+          'Error de autenticación',
+          'No se pudo completar la autenticación biométrica. Intenta de nuevo.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.log('Biometric authentication error:', error);
+      Alert.alert(
+        'Error',
+        'Error al acceder a la autenticación biométrica.',
+        [{ text: 'OK' }]
+      );
+    }
+  }, [isBiometricAvailable, onBiometricLogin, biometricType]);
 
   // Validate password strength
   const validatePassword = useCallback((password: string) => {
@@ -274,7 +368,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
                         placeholderTextColor={colors.textSecondary}
                         value={formData.name}
                         onChangeText={(value) => handleInputChange('name', value)}
-                        autoFocus={isSignup}
                         autoCapitalize="words"
                         autoCorrect={false}
                         contextMenuHidden={false}
@@ -303,7 +396,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
                       placeholderTextColor={colors.textSecondary}
                       value={formData.email}
                       onChangeText={(value) => handleInputChange('email', value)}
-                      autoFocus={!isSignup}
                       autoCapitalize="none"
                       autoCorrect={false}
                       keyboardType="email-address"
@@ -361,7 +453,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
 
                   {/* Password requirements (only for signup) */}
                   {isSignup && formData.password.length > 0 && (
-                    <View style={styles.requirementsContainer}>
+                    <View style={[styles.requirementsContainer, { backgroundColor: colors.surfaceSecondary }]}>
                       <ThemedText style={styles.requirementsTitle} variant="secondary">
                         Requisitos de contraseña:
                       </ThemedText>
@@ -370,12 +462,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
                           <Ionicons 
                             name={req.met ? "checkmark-circle" : "ellipse-outline"} 
                             size={16} 
-                            color={req.met ? "#10b981" : "#9ca3af"} 
+                            color={req.met ? "#10b981" : colors.textTertiary} 
                           />
                           <ThemedText 
                             style={[
                               styles.requirementText,
-                              { color: req.met ? "#10b981" : "#9ca3af" }
+                              { color: req.met ? "#10b981" : colors.textTertiary }
                             ]}
                           >
                             {req.text}
@@ -412,6 +504,31 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
                     }
               </ThemedText>
             </ThemedTouchableOpacity>
+
+                {/* Biometric Button - Only show for login and when biometric is available */}
+                {!isSignup && isBiometricAvailable && onBiometricLogin && (
+                  <ThemedTouchableOpacity 
+                    style={[
+                      styles.biometricButton,
+                      { 
+                        backgroundColor: colors.surfaceSecondary,
+                        borderColor: colors.border
+                      },
+                      (isLoading || isSubmitting) && styles.buttonDisabled
+                    ]}
+                    onPress={handleBiometricAuth}
+                    disabled={isLoading || isSubmitting}
+                  >
+                    <Ionicons 
+                      name={biometricType === 'Face ID' ? "scan" : "finger-print"} 
+                      size={20} 
+                      color={colors.primary} 
+                    />
+                    <ThemedText style={[styles.biometricButtonText, { color: colors.primary }]}>
+                      Acceso biométrico
+                    </ThemedText>
+                  </ThemedTouchableOpacity>
+                )}
           </View>
         </View>
           </ScrollView>
@@ -574,7 +691,6 @@ const styles = StyleSheet.create({
   },
   requirementsContainer: {
     padding: 12,
-    backgroundColor: '#f9fafb',
     borderRadius: 8,
     marginBottom: 16,
   },
@@ -618,6 +734,21 @@ const styles = StyleSheet.create({
   socialIconsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  biometricButton: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  biometricButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 12,
   },
 });
 

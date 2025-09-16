@@ -123,7 +123,7 @@ const SavingsScreen: React.FC = () => {
   }, [refreshId, refetchMonthsData]);
 
   const handleDataPointPress = (dataPoint: ChartDataPoint) => {
-    console.log('Data point pressed:', dataPoint);
+    // Handle data point press if needed
   };
 
   const formatEuros = (amount: number): string => {

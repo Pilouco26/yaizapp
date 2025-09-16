@@ -150,12 +150,23 @@ const BillsScreen: React.FC = () => {
    * Convierte un array genérico de objetos
    * { date: string; description: string; value: number } | JSONBillData
    * al formato JSONBillData que la aplicación maneja.
+   * Adds a 100ms delay between each transaction processing.
    */
-  const normalizeJSONBills = (data: any[]): Bill[] =>
-    data.map((item, idx) => {
+  const normalizeJSONBills = async (data: any[]): Promise<Bill[]> => {
+    const results: Bill[] = [];
+    
+    for (let idx = 0; idx < data.length; idx++) {
+      const item = data[idx];
+      
+      // Add 100ms delay between each transaction
+      if (idx > 0) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
       // Si ya llega en formato correcto se devuelve tal cual
       if (item.id && item.dueDate && item.amount !== undefined) {
-        return item as Bill;
+        results.push(item as Bill);
+        continue;
       }
 
       const isoDate =
@@ -163,19 +174,22 @@ const BillsScreen: React.FC = () => {
           ? new Date(item.date).toISOString()
           : new Date().toISOString();
 
-      return {
+      results.push({
         id: `import-${idx}-${Date.now()}`,
         name: item.description ?? 'Sin descripción',
         category: 'Otros',
         dueDate: isoDate,
         amount: typeof item.value === 'number' ? item.value : 0,
         currency: 'EUR',
-      } as Bill;
-    });
+      } as Bill);
+    }
+    
+    return results;
+  };
 
   const handleImportJSON = async (jsonData: Bill[] | any[]) => {
     try {
-      const normalized = normalizeJSONBills(jsonData);
+      const normalized = await normalizeJSONBills(jsonData);
       
       // Refresh both bills and transactions from API to get the latest data
       await refreshAllData();

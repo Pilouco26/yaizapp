@@ -72,6 +72,9 @@ export const API_CONFIG = {
       SEARCH: '/api/notifications/searchBy',
     },
     
+    // Banks
+    BANKS: '/api/banks',
+    
     // Legacy endpoints (for backward compatibility)
     BILLS: '/api/bills',
     UPLOAD_BILLS: '/api/bills',

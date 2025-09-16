@@ -8,6 +8,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
   loginWithMeta: () => Promise<void>;
+  loginWithBiometric: () => Promise<void>;
   logout: () => Promise<void>;
   isLoading: boolean;
 }
@@ -140,6 +141,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const loginWithBiometric = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Simulate API call delay for biometric login
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // For biometric login, we'll use a stored user or create a demo user
+      // In a real app, you would verify biometric credentials and retrieve user data
+      const storedUserData = await AsyncStorage.getItem('user_data');
+      
+      if (storedUserData) {
+        // Use previously stored user data
+        const parsedUser = JSON.parse(storedUserData);
+        setUser(parsedUser);
+        setIsAuthenticated(true);
+        await AsyncStorage.setItem('auth_status', 'authenticated');
+      } else {
+        // Create a demo user for biometric login
+        const biometricUser: OAuthUser = {
+          id: 'biometric-user-' + Date.now(),
+          email: 'biometric@example.com',
+          name: 'Usuario Biométrico',
+          provider: 'biometric' as const,
+        };
+        
+        // Store authentication status and user data
+        await AsyncStorage.setItem('auth_status', 'authenticated');
+        await AsyncStorage.setItem('auth_provider', 'biometric');
+        await AsyncStorage.setItem('user_data', JSON.stringify(biometricUser));
+        
+        setUser(biometricUser);
+        setIsAuthenticated(true);
+      }
+    } catch (error) {
+      console.error('Biometric login error:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = async () => {
     try {
       setIsLoading(true);
@@ -171,6 +214,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     signup,
     loginWithMeta,
+    loginWithBiometric,
     logout,
     isLoading,
   };

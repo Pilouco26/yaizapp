@@ -7,7 +7,7 @@ import LoginScreen from '../screens/login/LoginScreen';
 import StackNavigator from '../navigation/StackNavigator';
 
 const AppWrapper: React.FC = () => {
-  const { isAuthenticated, isLoading, login, signup, loginWithMeta } = useAuth();
+  const { isAuthenticated, isLoading, login, signup, loginWithMeta, loginWithBiometric } = useAuth();
   const { colors, theme } = useTheme();
 
   if (isLoading) {
@@ -27,6 +27,7 @@ const AppWrapper: React.FC = () => {
           onLogin={login} 
           onSignup={signup}
           onMetaLogin={loginWithMeta}
+          onBiometricLogin={loginWithBiometric}
           isLoading={isLoading} 
         />
       </>

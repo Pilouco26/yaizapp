@@ -1,41 +1,79 @@
-import React, { useState } from 'react';
-import { View, Image, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { ThemedView, ThemedText, ThemedTouchableOpacity } from '../../components/ThemeWrapper';
+import { BanksService, UsersService } from '../../services';
+import { APIBank } from '../../services/apiservices/BanksService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const BankScreen: React.FC = () => {
   const { colors } = useTheme();
+  const { user } = useAuth();
   const [selectedBank, setSelectedBank] = useState<string | null>(null);
+  const [banks, setBanks] = useState<APIBank[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const banks = [
-    {
-      id: 'creand',
-      name: 'Creand',
-      logo: require('../../utils/pictures/creand.png'),
-    },
-    {
-      id: 'andbank',
-      name: 'Andbank',
-      logo: require('../../utils/pictures/andbank.jpg'),
-    },
-    {
-      id: 'santander',
-      name: 'Santander',
-      logo: require('../../utils/pictures/Santander.svg'),
-    },
-    {
-      id: 'bbva',
-      name: 'BBVA',
-      logo: require('../../utils/pictures/BBVA.svg'),
-    },
-  ];
+
+  useEffect(() => {
+    const fetchBanks = async () => {
+      try {
+        setIsLoading(true);
+        const banksData = await BanksService.getBanks();
+        setBanks(banksData);
+      } catch (error) {
+        console.error('Error fetching banks:', error);
+        Alert.alert('Error', 'No se pudieron cargar los bancos');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBanks();
+  }, []);
+
 
   const handleBankPress = (bankId: string) => {
     setSelectedBank(bankId);
-    console.log('Selected bank:', bankId);
   };
+
+  const handleConfirm = async () => {
+    if (!selectedBank) {
+      Alert.alert('Error', 'Por favor selecciona un banco');
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      // Use hardcoded user ID "1" as expected by the API
+      const userId = "1";
+      
+      await UsersService.updateUser(userId, { bankId: selectedBank });
+      Alert.alert('Éxito', 'Banco actualizado correctamente');
+      // Optionally navigate back or show success state
+    } catch (error) {
+      console.error('Error updating user bank:', error);
+      Alert.alert('Error', `No se pudo actualizar el banco: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        <ThemedView style={{ flex: 1 }}>
+          <View className="flex-1 items-center justify-center p-4">
+            <ThemedText className="text-lg font-medium mb-4">
+              Cargando bancos...
+            </ThemedText>
+          </View>
+        </ThemedView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -47,13 +85,13 @@ const BankScreen: React.FC = () => {
           
           <View className="flex-1">
             {banks.map((bank, index) => {
-              const isSelected = selectedBank === bank.id;
+              const isSelected = selectedBank === bank.id.toString();
               return (
                 <ThemedTouchableOpacity
                   key={bank.id}
                   className="flex-row items-center p-4 rounded-xl mb-3"
                   variant="surface"
-                  onPress={() => handleBankPress(bank.id)}
+                  onPress={() => handleBankPress(bank.id.toString())}
                   activeOpacity={1}
                   style={{
                     minHeight: 80,
@@ -63,16 +101,6 @@ const BankScreen: React.FC = () => {
                     opacity: 1,
                   }}
                 >
-                <View className="w-12 h-12 rounded-lg overflow-hidden mr-4">
-                  <Image
-                    source={bank.logo}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      resizeMode: 'contain',
-                    }}
-                  />
-                </View>
                 <ThemedText 
                   className="text-lg font-medium flex-1"
                   style={{ color: isSelected ? colors.primary : undefined }}
@@ -90,6 +118,29 @@ const BankScreen: React.FC = () => {
               );
             })}
           </View>
+          
+          {/* Confirm Button */}
+          {selectedBank && (
+            <ThemedTouchableOpacity
+              className="flex-row items-center justify-center p-4 rounded-xl mt-4"
+              variant="primary"
+              onPress={handleConfirm}
+              activeOpacity={1}
+              disabled={isUpdating}
+              style={{
+                opacity: isUpdating ? 0.7 : 1,
+              }}
+            >
+              <Ionicons 
+                name={isUpdating ? "hourglass" : "checkmark"} 
+                size={20} 
+                color="#ffffff" 
+              />
+              <ThemedText className="text-base font-semibold ml-2" style={{ color: '#ffffff' }}>
+                {isUpdating ? 'Actualizando...' : 'Confirmar Banco'}
+              </ThemedText>
+            </ThemedTouchableOpacity>
+          )}
         </View>
       </ThemedView>
     </SafeAreaView>

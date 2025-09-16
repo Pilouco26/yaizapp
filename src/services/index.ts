@@ -7,6 +7,7 @@ export { MonthsService } from './apiservices/MonthsService';
 export { GoalsService } from './apiservices/GoalsService';
 export { TransactionsService } from './apiservices/TransactionsService';
 export { NotificationsService } from './apiservices/NotificationsService';
+export { BanksService } from './apiservices/BanksService';
 
 // Export types
 export * from './types';
