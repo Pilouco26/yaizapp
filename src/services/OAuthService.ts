@@ -7,7 +7,7 @@ export interface OAuthUser {
   email: string;
   name: string;
   photo?: string;
-  provider: 'google' | 'facebook' | 'direct';
+  provider: 'google' | 'facebook' | 'direct' | 'biometric';
 }
 
 // Initialize OAuth services

@@ -33,11 +33,15 @@ export class FamiliesService {
 
       const data: ApiResponse<Family[]> = await response.json();
       
-      if (!data.success || !data.data) {
-        throw new Error(data.message || 'Failed to get families');
+      if (data.error) {
+        throw new Error(typeof data.error === 'string' ? data.error : 'API returned an error');
+      }
+      
+      if (!data.data) {
+        throw new Error('No data returned from API');
       }
 
-      return data.data;
+      return Array.isArray(data.data) ? data.data : [data.data];
     } catch (error) {
       console.error('FamiliesService.getAllFamilies error:', error);
       throw new Error(`Failed to get families: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -50,6 +54,8 @@ export class FamiliesService {
    */
   static async searchFamilies(params: FamilySearchParams, authToken?: string): Promise<Family[]> {
     try {
+      console.log('🔍 FamiliesService.searchFamilies called with params:', params);
+      
       const searchParams = new URLSearchParams();
       
       if (params.id) {
@@ -60,6 +66,7 @@ export class FamiliesService {
       }
 
       const apiUrl = getFullApiUrlWithAuth(`${API_CONFIG.ENDPOINTS.FAMILIES.SEARCH}?${searchParams.toString()}`);
+      console.log('🌐 FamiliesService.searchFamilies API URL:', apiUrl);
       
       const headers = getDefaultHeaders();
 
@@ -68,25 +75,54 @@ export class FamiliesService {
         headers['Authorization'] = `Bearer ${authToken}`;
       }
 
-      const response = await fetch(apiUrl, {
-        method: 'GET',
-        headers,
-      });
+      console.log('📤 FamiliesService.searchFamilies request headers:', headers);
+      console.log('📤 FamiliesService.searchFamilies making GET request...');
+
+      let response;
+      try {
+        response = await fetch(apiUrl, {
+          method: 'GET',
+          headers,
+        });
+      } catch (fetchError) {
+        console.error('❌ FamiliesService.searchFamilies fetch error:', fetchError);
+        throw fetchError;
+      }
+
+      console.log('📥 FamiliesService.searchFamilies response status:', response.status);
+      console.log('📥 FamiliesService.searchFamilies response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorText = await response.text();
+        console.error('❌ FamiliesService.searchFamilies HTTP error response body:', errorText);
+        console.error('❌ FamiliesService.searchFamilies HTTP error status:', response.status);
+        console.error('❌ FamiliesService.searchFamilies HTTP error statusText:', response.statusText);
         throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
       }
 
       const data: ApiResponse<Family[]> = await response.json();
+      console.log('📥 FamiliesService.searchFamilies raw response:', JSON.stringify(data, null, 2));
       
-      if (!data.success || !data.data) {
-        throw new Error(data.message || 'Failed to search families');
+      // Check if there's an error in the response
+      if (data.error) {
+        console.error('❌ FamiliesService.searchFamilies API error:', data.error);
+        throw new Error(typeof data.error === 'string' ? data.error : 'API returned an error');
+      }
+      
+      // Check if data exists
+      if (!data.data) {
+        console.error('❌ FamiliesService.searchFamilies no data in response');
+        throw new Error('No data returned from API');
       }
 
-      return data.data;
+      console.log('✅ FamiliesService.searchFamilies returning', Array.isArray(data.data) ? data.data.length : 1, 'families');
+      return Array.isArray(data.data) ? data.data : [data.data];
     } catch (error) {
-      console.error('FamiliesService.searchFamilies error:', error);
+      console.error('❌ FamiliesService.searchFamilies error details:');
+      console.error('Error type:', typeof error);
+      console.error('Error message:', error instanceof Error ? error.message : String(error));
+      console.error('Full error object:', error);
+      console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace available');
       throw new Error(`Failed to search families: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -115,8 +151,12 @@ export class FamiliesService {
 
       const data: ApiResponse<Family> = await response.json();
       
-      if (!data.success || !data.data) {
-        throw new Error(data.message || 'Failed to create family');
+      if (data.error) {
+        throw new Error(typeof data.error === 'string' ? data.error : 'API returned an error');
+      }
+      
+      if (!data.data) {
+        throw new Error('No data returned from API');
       }
 
       return data.data;
@@ -150,8 +190,12 @@ export class FamiliesService {
 
       const data: ApiResponse<Family> = await response.json();
       
-      if (!data.success || !data.data) {
-        throw new Error(data.message || 'Failed to update family');
+      if (data.error) {
+        throw new Error(typeof data.error === 'string' ? data.error : 'API returned an error');
+      }
+      
+      if (!data.data) {
+        throw new Error('No data returned from API');
       }
 
       return data.data;
@@ -184,8 +228,8 @@ export class FamiliesService {
 
       const data: ApiResponse = await response.json();
       
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to delete family');
+      if (data.error) {
+        throw new Error(typeof data.error === 'string' ? data.error : 'API returned an error');
       }
     } catch (error) {
       console.error('FamiliesService.deleteFamily error:', error);

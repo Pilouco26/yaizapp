@@ -14,12 +14,22 @@ const ConfigurationScreen: React.FC = () => {
     navigation.navigate('Bank' as never);
   };
 
+  const handleFamilyPress = () => {
+    navigation.navigate('Family' as never);
+  };
+
   const configurationOptions = [
     {
       id: 'bank',
       title: 'Banco',
       icon: 'card',
       onPress: handleBankPress,
+    },
+    {
+      id: 'family',
+      title: 'Familia',
+      icon: 'people',
+      onPress: handleFamilyPress,
     },
     {
       id: 'notifications',
@@ -69,9 +79,6 @@ const ConfigurationScreen: React.FC = () => {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ThemedView style={{ flex: 1 }}>
         <View className="flex-1 p-4">
-          <ThemedText className="text-2xl font-bold mb-6 text-center">
-            Configuración
-          </ThemedText>
           
           <View className="flex-1">
             {configurationOptions.map((option, index) => (

@@ -2,10 +2,9 @@
 
 // Base API Response
 export interface ApiResponse<T = any> {
-  success: boolean;
   data?: T;
-  message?: string;
-  error?: string;
+  error?: any;
+  meta?: Record<string, any>;
 }
 
 // Authentication Types

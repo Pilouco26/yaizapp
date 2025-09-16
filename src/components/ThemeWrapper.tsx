@@ -102,7 +102,7 @@ export const ThemedTextInput: React.FC<{
 export const ThemedTouchableOpacity: React.FC<{
   children: React.ReactNode;
   className?: string;
-  variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'surface';
+  variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'surface' | 'surfaceSecondary';
   style?: any;
   [key: string]: any;
 }> = ({ children, className = '', variant = 'surface', style, ...props }) => {
@@ -115,6 +115,7 @@ export const ThemedTouchableOpacity: React.FC<{
       case 'success': return { backgroundColor: colors.success };
       case 'warning': return { backgroundColor: colors.warning };
       case 'error': return { backgroundColor: colors.error };
+      case 'surfaceSecondary': return { backgroundColor: colors.surfaceSecondary };
       default: return { 
         backgroundColor: colors.surface
       };

@@ -42,4 +42,6 @@ const AppWrapper: React.FC = () => {
   );
 };
 
+AppWrapper.displayName = 'AppWrapper';
+
 export default AppWrapper; 

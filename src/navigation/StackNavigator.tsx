@@ -4,11 +4,13 @@ import { useTheme } from '../contexts/ThemeContext';
 import TabNavigator from './TabNavigator';
 import ConfigurationScreen from '../screens/configuration/ConfigurationScreen';
 import BankScreen from '../screens/bank/BankScreen';
+import FamilyScreen from '../screens/family/FamilyScreen';
 
 export type RootStackParamList = {
   MainTabs: undefined;
   Configuration: undefined;
   Bank: undefined;
+  Family: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -22,11 +24,11 @@ const StackNavigator: React.FC = () => {
         headerStyle: {
           backgroundColor: colors.card,
         },
-        headerTintColor: colors.text,
+        headerTintColor: colors.textPrimary,
         headerTitleStyle: {
           fontWeight: 'bold',
         },
-        headerBackTitleVisible: false,
+        headerBackTitle: '',
       }}
     >
       <Stack.Screen 
@@ -50,8 +52,18 @@ const StackNavigator: React.FC = () => {
           headerShown: true,
         }}
       />
+      <Stack.Screen 
+        name="Family" 
+        component={FamilyScreen}
+        options={{ 
+          title: 'Familia',
+          headerShown: true,
+        }}
+      />
     </Stack.Navigator>
   );
 };
+
+StackNavigator.displayName = 'StackNavigator';
 
 export default StackNavigator;
