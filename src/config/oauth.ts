@@ -74,7 +74,7 @@ export const validateRedirectUri = (uri: string): boolean => {
   
   const isValidScheme = validUris.includes(uri);
   
-  console.log('URI validation result:', isValidScheme);
+  ('URI validation result:', isValidScheme);
   
   if (!isValidScheme) {
     console.warn('Invalid redirect URI scheme:', uri);

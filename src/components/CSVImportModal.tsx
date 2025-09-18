@@ -162,13 +162,11 @@ const CSVImportModal: React.FC<CSVImportModalProps> = ({
             value,
           };
           data.push(parsedItem);
-          console.log(`   ✅ Added to data array:`, parsedItem);
         } else {
-          console.log(`   ❌ Skipped row - validation failed`);
         }
       }
 
-      console.log(`\n🎉 [CSVImportModal] Parsing completed!`);
+      (`\n🎉 [CSVImportModal] Parsing completed!`);
 
       if (data.length === 0) {
         throw new Error('No se encontraron datos válidos en el archivo CSV');
@@ -238,7 +236,7 @@ const CSVImportModal: React.FC<CSVImportModalProps> = ({
         if (createRes.ok) {
           const data = await createRes.json();
           monthId = data?.data?.id ?? null;
-          console.log(`📅 Created month ${monthId}`);
+          (`📅 Created month ${monthId}`);
         } else if (createRes.status === 409) {
           // 2. If conflict, fetch existing month via searchBy
           const searchUrl = getFullApiUrlWithAuth(
@@ -254,7 +252,7 @@ const CSVImportModal: React.FC<CSVImportModalProps> = ({
           }
           const searchData = await searchRes.json();
           monthId = searchData?.data?.[0]?.id ?? null;
-          console.log(`ℹ️ Using existing month ${monthId}`);
+          (`ℹ️ Using existing month ${monthId}`);
         } else {
           const errText = await createRes.text();
           throw new Error(`Month create failed: ${errText}`);
@@ -290,7 +288,7 @@ const CSVImportModal: React.FC<CSVImportModalProps> = ({
             }
           })
         );
-        console.log(`✅ Posted ${txBodies.length} transactions for month ${year}-${month}`);
+        (`✅ Posted ${txBodies.length} transactions for month ${year}-${month}`);
       }
 
       // All done

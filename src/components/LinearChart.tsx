@@ -80,7 +80,7 @@ export interface LinearChartProps {
  *   ]}
  *   primaryColor="#0ea5e9"
  *   title="Savings Progress"
- *   onDataPointPress={(point) => console.log(point)}
+ *   onDataPointPress={(point) => (point)}
  * />
  * 
  * @example

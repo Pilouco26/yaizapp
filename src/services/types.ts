@@ -2,8 +2,10 @@
 
 // Base API Response
 export interface ApiResponse<T = any> {
+  success: boolean;
   data?: T;
   error?: any;
+  message?: string;
   meta?: Record<string, any>;
 }
 
@@ -42,10 +44,14 @@ export interface HealthSearchParams {
 
 // User Types
 export interface User {
-  id: string;
+  id: number;
   username: string;
   email: string;
   name: string;
+  goalValue?: number | null;
+  bankId?: number;
+  type?: string;
+  familyId?: number;
   createdAt: string;
   updatedAt: string;
   isActive: boolean;
@@ -63,13 +69,20 @@ export interface UpdateUserRequest {
   email?: string;
   name?: string;
   isActive?: boolean;
-  bankId?: string;
+  bankId?: number;
 }
 
 export interface UserSearchParams {
-  id?: string;
+  id?: number;
   username?: string;
   email?: string;
+}
+
+// User Response Types
+export interface UserBodyResponse {
+  success: boolean;
+  message: string;
+  user: User;
 }
 
 // Family Types
@@ -225,17 +238,18 @@ export interface TransactionSearchParams {
 export interface Notification {
   id: string;
   userId: string;
-  type: 'SYSTEM' | 'BUDGET_ALERT';
+  type: 'SYSTEM' | 'BUDGET_ALERT' | 'FRIEND';
   title: string;
   message: string;
   isRead: boolean;
+  read?: boolean; // API field name
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CreateNotificationRequest {
   userId: string;
-  type: 'SYSTEM' | 'BUDGET_ALERT';
+  type: 'SYSTEM' | 'BUDGET_ALERT' | 'FRIEND';
   title: string;
   message: string;
 }
@@ -248,7 +262,14 @@ export interface UpdateNotificationRequest {
 
 export interface NotificationSearchParams {
   userId?: string;
-  type?: 'SYSTEM' | 'BUDGET_ALERT';
+  type?: 'SYSTEM' | 'BUDGET_ALERT' | 'FRIEND';
   read?: boolean;
+}
+
+// Notification API Response Types
+export interface NotificationsResponse {
+  success: boolean;
+  message: string;
+  notifications: Notification[];
 }
 

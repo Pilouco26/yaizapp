@@ -74,32 +74,32 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
       
-      console.log('Biometric check - Hardware:', hasHardware, 'Enrolled:', isEnrolled);
+      ('Biometric check - Hardware:', hasHardware, 'Enrolled:', isEnrolled);
       
       if (hasHardware && isEnrolled) {
         const biometricTypes = await LocalAuthentication.supportedAuthenticationTypesAsync();
-        console.log('Supported biometric types:', biometricTypes);
+        ('Supported biometric types:', biometricTypes);
         
         // Only enable if Face ID or Touch ID is available
         const hasFaceID = biometricTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION);
         const hasTouchID = biometricTypes.includes(LocalAuthentication.AuthenticationType.FINGERPRINT);
         
-        console.log('Face ID available:', hasFaceID, 'Touch ID available:', hasTouchID);
+        ('Face ID available:', hasFaceID, 'Touch ID available:', hasTouchID);
         
         if (hasFaceID || hasTouchID) {
           setIsBiometricAvailable(true);
           
           if (hasFaceID) {
             setBiometricType('Face ID');
-            console.log('Face ID enabled');
+            ('Face ID enabled');
           } else if (hasTouchID) {
             setBiometricType('Touch ID');
-            console.log('Touch ID enabled');
+            ('Touch ID enabled');
           }
         }
       }
     } catch (error) {
-      console.log('Error checking biometric availability:', error);
+      ('Error checking biometric availability:', error);
     }
   }, []);
 
@@ -107,8 +107,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
   const handleBiometricAuth = useCallback(async () => {
     if (!isBiometricAvailable || !onBiometricLogin) return;
 
-    console.log('Starting biometric authentication...');
-    console.log('Biometric type:', biometricType);
+    ('Starting biometric authentication...');
+    ('Biometric type:', biometricType);
 
     try {
       const result = await LocalAuthentication.authenticateAsync({
@@ -118,24 +118,24 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
         cancelLabel: 'Cancelar',
       });
 
-      console.log('Biometric authentication result:', result);
+      ('Biometric authentication result:', result);
 
       if (result.success) {
-        console.log('Biometric authentication successful');
+        ('Biometric authentication successful');
         await onBiometricLogin();
       } else if (result.error === 'user_cancel') {
-        console.log('User cancelled biometric authentication');
+        ('User cancelled biometric authentication');
         // User cancelled, no need to show error
         return;
       } else if (result.error === 'not_available') {
-        console.log('Biometric not available');
+        ('Biometric not available');
         Alert.alert(
           'Biometría no disponible',
           'Face ID no está disponible en este momento. Intenta de nuevo.',
           [{ text: 'OK' }]
         );
       } else {
-        console.log('Biometric authentication failed:', result.error);
+        ('Biometric authentication failed:', result.error);
         Alert.alert(
           'Error de autenticación',
           'No se pudo completar la autenticación biométrica. Intenta de nuevo.',
@@ -143,7 +143,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
         );
       }
     } catch (error) {
-      console.log('Biometric authentication error:', error);
+      ('Biometric authentication error:', error);
       Alert.alert(
         'Error',
         'Error al acceder a la autenticación biométrica.',

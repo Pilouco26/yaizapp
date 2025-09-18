@@ -8,15 +8,12 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import CustomButton from '../../components/CustomButton';
 import CSVImportModal from '../../components/CSVImportModal';
 import { useBillsContext } from '../../contexts/BillsContext';
 import { Bill } from '../../utils/types';
-import { formatDate } from '../../utils/helpers';
-import sampleBills from '../../utils/sampleBills.json';
+import { formatDate } from '../../utils/helpers'; 
 import { ThemedView, ThemedText, ThemedTouchableOpacity, ThemedScrollView, ThemedCard } from '../../components/ThemeWrapper';
 import { useTheme } from '../../contexts/ThemeContext';
-import { TransactionsService } from '../../services/apiservices/TransactionsService';
 import { user_id } from '../../config/constants';
 
 const BillsScreen: React.FC = () => {
@@ -51,10 +48,10 @@ const BillsScreen: React.FC = () => {
   };
 
   // Pagination logic
-  const totalPages = Math.ceil(bills.length / itemsPerPage);
+  const totalPages = Math.ceil(transactions.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentBills = bills.slice(startIndex, endIndex);
+  const currentTransactions = transactions.slice(startIndex, endIndex);
 
   // Simple navigation functions
   const goToNextPage = () => {
@@ -69,10 +66,10 @@ const BillsScreen: React.FC = () => {
     }
   };
 
-  // Reset to first page when bills change
+  // Reset to first page when transactions change
   useEffect(() => {
     setCurrentPage(1);
-  }, [bills.length]);
+  }, [transactions.length]);
 
   // Ensure current page is within valid range
   useEffect(() => {
@@ -104,8 +101,8 @@ const BillsScreen: React.FC = () => {
 
       const data = await response.json();
       
-      if (data.success && data.data) {
-        setTransactions(Array.isArray(data.data) ? data.data : [data.data]);
+      if (data.data && data.data.success && data.data.transactions) {
+        setTransactions(Array.isArray(data.data.transactions) ? data.data.transactions : [data.data.transactions]);
       } else {
         setTransactions([]);
       }
@@ -221,6 +218,36 @@ const BillsScreen: React.FC = () => {
     }
   };
 
+  const getTransactionIcon = (amount: number) => {
+    if (amount >= 0) {
+      // Positive amounts - green coin
+      return 'wallet';
+    } else {
+      // Negative amounts
+      const absAmount = Math.abs(amount);
+      if (absAmount <= 5) {
+        // -5€ or less - single coin
+        return 'wallet';
+      } else if (absAmount <= 30) {
+        // -30€ or less - bill
+        return 'document-text';
+      } else {
+        // Higher negative amounts - bunch of coins
+        return 'folder';
+      }
+    }
+  };
+
+  const getTransactionIconColor = (amount: number) => {
+    if (amount >= 0) {
+      // Positive amounts - green
+      return colors.success;
+    } else {
+      // Negative amounts - red
+      return colors.error;
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ThemedView style={{ flex: 1 }}>
@@ -267,27 +294,6 @@ const BillsScreen: React.FC = () => {
               <ThemedText 
                 className="text-3xl font-bold mb-1"
                 style={{
-                  color: bills.reduce((sum, bill) => sum + bill.amount, 0) >= 0 
-                    ? colors.success 
-                    : colors.error
-                }}
-              >
-                {formatCurrency(bills.reduce((sum, bill) => sum + bill.amount, 0))}
-              </ThemedText>
-              <ThemedText className="text-sm" variant="tertiary">
-              {bills.length} factura{bills.length !== 1 ? 's' : ''} en total
-              </ThemedText>
-            </ThemedCard>
-
-          {/* Transactions Summary Card */}
-          {transactions.length > 0 && (
-            <ThemedCard className="p-5 mb-5 items-center">
-              <ThemedText className="text-lg font-bold mb-2">
-                Transacciones Recientes
-              </ThemedText>
-              <ThemedText 
-                className="text-2xl font-bold mb-1"
-                style={{
                   color: transactions.reduce((sum, tx) => sum + (tx.amount || 0), 0) >= 0 
                     ? colors.success 
                     : colors.error
@@ -296,50 +302,49 @@ const BillsScreen: React.FC = () => {
                 {formatCurrency(transactions.reduce((sum, tx) => sum + (tx.amount || 0), 0))}
               </ThemedText>
               <ThemedText className="text-sm" variant="tertiary">
-                {transactions.length} transacción{transactions.length !== 1 ? 'es' : ''} encontrada{transactions.length !== 1 ? 's' : ''}
+              {transactions.length} transacción{transactions.length !== 1 ? 'es' : ''} en total
               </ThemedText>
             </ThemedCard>
-          )}
           
-          {/* Bills List */}
+          {/* Transactions List */}
             <ThemedCard className="rounded-2xl p-4 mb-4">
             <View className="flex-row justify-between items-center mb-4">
                 <ThemedText className="text-xl font-bold">
-                Facturas ({bills.length})
+                Transacciones ({transactions.length})
                 </ThemedText>
             </View>
             
-            {bills.length === 0 ? (
+            {transactions.length === 0 ? (
               <View className="items-center py-10">
                   <Ionicons name="document-text" size={48} color={colors.textTertiary} />
                   <ThemedText className="text-lg font-bold mt-4">
-                  No se encontraron facturas
+                  No se encontraron transacciones
                   </ThemedText>
                   <ThemedText className="text-sm mt-2" variant="secondary">
-                  Importa datos JSON para comenzar
+                  Los datos se cargarán automáticamente
                   </ThemedText>
               </View>
             ) : (
               <>
-                {currentBills.map((bill) => (
-                    <View key={bill.id} className="flex-row items-center py-3">
+                {currentTransactions.map((transaction) => (
+                    <View key={transaction.id} className="flex-row items-center py-3">
                     <View className="w-10 h-10 rounded-full bg-neutral-100 justify-center items-center mr-3">
                       <Ionicons 
-                        name={getCategoryIcon(bill.category) as any} 
+                        name={getTransactionIcon(transaction.amount) as any} 
                         size={24} 
-                          color={colors.textSecondary}
+                        color={getTransactionIconColor(transaction.amount)}
                       />
                     </View>
                     
                     <View className="flex-1">
                         <ThemedText className="text-base font-semibold">
-                        {truncateBillName(bill.name)}
+                        {truncateBillName(transaction.description)}
                         </ThemedText>
                         <ThemedText className="text-sm mt-0.5" variant="secondary">
-                        {bill.category}
+                        {transaction.type === 'EXPENSE' ? 'Gasto' : 'Ingreso'}
                         </ThemedText>
                         <ThemedText className="text-xs mt-0.5" variant="tertiary">
-                        Vence: {formatDate(bill.dueDate)}
+                        {formatDate(transaction.date)}
                         </ThemedText>
                     </View>
                     
@@ -347,10 +352,10 @@ const BillsScreen: React.FC = () => {
                         <ThemedText 
                           className="text-base font-bold"
                           style={{
-                            color: bill.amount >= 0 ? colors.success : colors.error
+                            color: transaction.amount >= 0 ? colors.success : colors.error
                           }}
                         >
-                          {formatCurrency(bill.amount)}
+                          {formatCurrency(transaction.amount)}
                         </ThemedText>
                     </View>
                   </View>

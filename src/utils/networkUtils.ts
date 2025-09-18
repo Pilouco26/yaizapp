@@ -13,7 +13,7 @@ export const getCurrentIPAddress = (): string => {
 // Function to set the current IP address
 export const setCurrentIPAddress = (ip: string): void => {
   currentIPAddress = ip;
-  console.log('OAuth IP Address set to:', ip);
+  ('OAuth IP Address set to:', ip);
 };
 
 // Function to get the OAuth redirect URI with current IP
@@ -24,8 +24,8 @@ export const getOAuthRedirectURI = (): string => {
     ? 'http://localhost:8081/oauth/callback'
     : 'com.yaizapp.app://oauth/callback';
   
-  console.log('OAuth Redirect URI for environment:', __DEV__ ? 'development' : 'production');
-  console.log('OAuth Redirect URI:', redirectURI);
+  ('OAuth Redirect URI for environment:', __DEV__ ? 'development' : 'production');
+  ('OAuth Redirect URI:', redirectURI);
   return redirectURI;
 };
 

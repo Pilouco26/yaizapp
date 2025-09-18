@@ -5,12 +5,14 @@ import TabNavigator from './TabNavigator';
 import ConfigurationScreen from '../screens/configuration/ConfigurationScreen';
 import BankScreen from '../screens/bank/BankScreen';
 import FamilyScreen from '../screens/family/FamilyScreen';
+import NotificationsScreen from '../screens/notifications/NotificationsScreen';
 
 export type RootStackParamList = {
   MainTabs: undefined;
   Configuration: undefined;
   Bank: undefined;
   Family: undefined;
+  Notifications: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -57,6 +59,14 @@ const StackNavigator: React.FC = () => {
         component={FamilyScreen}
         options={{ 
           title: 'Familia',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen 
+        name="Notifications" 
+        component={NotificationsScreen}
+        options={{ 
+          title: 'Notificaciones',
           headerShown: true,
         }}
       />

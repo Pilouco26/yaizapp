@@ -28,8 +28,16 @@ export class GoalsService {
 
       const data: ApiResponse<Goal[]> = await response.json();
       
-      if (!data.success || !data.data) {
-        throw new Error(data.message || 'Failed to get goals');
+      if (!data.success) {
+        throw new Error(data.message || 'API request failed');
+      }
+      
+      if (data.error) {
+        throw new Error(typeof data.error === 'string' ? data.error : 'API returned an error');
+      }
+      
+      if (!data.data) {
+        throw new Error('No data returned from API');
       }
 
       return data.data;
@@ -75,8 +83,16 @@ export class GoalsService {
 
       const data: ApiResponse<Goal[]> = await response.json();
       
-      if (!data.success || !data.data) {
-        throw new Error(data.message || 'Failed to search goals');
+      if (!data.success) {
+        throw new Error(data.message || 'API request failed');
+      }
+      
+      if (data.error) {
+        throw new Error(typeof data.error === 'string' ? data.error : 'API returned an error');
+      }
+      
+      if (!data.data) {
+        throw new Error('No data returned from API');
       }
 
       return data.data;
@@ -108,8 +124,16 @@ export class GoalsService {
 
       const data: ApiResponse<Goal> = await response.json();
       
-      if (!data.success || !data.data) {
-        throw new Error(data.message || 'Failed to create goal');
+      if (!data.success) {
+        throw new Error(data.message || 'API request failed');
+      }
+      
+      if (data.error) {
+        throw new Error(typeof data.error === 'string' ? data.error : 'API returned an error');
+      }
+      
+      if (!data.data) {
+        throw new Error('No data returned from API');
       }
 
       return data.data;
@@ -141,8 +165,16 @@ export class GoalsService {
 
       const data: ApiResponse<Goal> = await response.json();
       
-      if (!data.success || !data.data) {
-        throw new Error(data.message || 'Failed to update goal');
+      if (!data.success) {
+        throw new Error(data.message || 'API request failed');
+      }
+      
+      if (data.error) {
+        throw new Error(typeof data.error === 'string' ? data.error : 'API returned an error');
+      }
+      
+      if (!data.data) {
+        throw new Error('No data returned from API');
       }
 
       return data.data;
@@ -174,7 +206,11 @@ export class GoalsService {
       const data: ApiResponse = await response.json();
       
       if (!data.success) {
-        throw new Error(data.message || 'Failed to delete goal');
+        throw new Error(data.message || 'API request failed');
+      }
+      
+      if (data.error) {
+        throw new Error(typeof data.error === 'string' ? data.error : 'API returned an error');
       }
     } catch (error) {
       throw new Error(`Failed to delete goal: ${error instanceof Error ? error.message : 'Unknown error'}`);

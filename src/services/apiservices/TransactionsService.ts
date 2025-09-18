@@ -28,8 +28,16 @@ export class TransactionsService {
 
       const data: ApiResponse<Transaction[]> = await response.json();
       
-      if (!data.success || !data.data) {
-        throw new Error(data.message || 'Failed to get transactions');
+      if (!data.success) {
+        throw new Error(data.message || 'API request failed');
+      }
+      
+      if (data.error) {
+        throw new Error(typeof data.error === 'string' ? data.error : 'API returned an error');
+      }
+      
+      if (!data.data) {
+        throw new Error('No data returned from API');
       }
 
       return data.data;
@@ -118,8 +126,16 @@ export class TransactionsService {
 
       const data: ApiResponse<Transaction> = await response.json();
       
-      if (!data.success || !data.data) {
-        throw new Error(data.message || 'Failed to create transaction');
+      if (!data.success) {
+        throw new Error(data.message || 'API request failed');
+      }
+      
+      if (data.error) {
+        throw new Error(typeof data.error === 'string' ? data.error : 'API returned an error');
+      }
+      
+      if (!data.data) {
+        throw new Error('No data returned from API');
       }
 
       return data.data;
@@ -184,7 +200,11 @@ export class TransactionsService {
       const data: ApiResponse = await response.json();
       
       if (!data.success) {
-        throw new Error(data.message || 'Failed to delete transaction');
+        throw new Error(data.message || 'API request failed');
+      }
+      
+      if (data.error) {
+        throw new Error(typeof data.error === 'string' ? data.error : 'API returned an error');
       }
     } catch (error) {
       throw new Error(`Failed to delete transaction: ${error instanceof Error ? error.message : 'Unknown error'}`);

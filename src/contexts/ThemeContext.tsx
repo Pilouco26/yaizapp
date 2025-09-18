@@ -169,7 +169,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         setThemeState(savedTheme);
       }
     } catch (error) {
-      console.log('Error loading theme:', error);
+      ('Error loading theme:', error);
     }
   };
 
@@ -177,7 +177,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     try {
       await AsyncStorage.setItem('theme', newTheme);
     } catch (error) {
-      console.log('Error saving theme:', error);
+      ('Error saving theme:', error);
     }
   };
 

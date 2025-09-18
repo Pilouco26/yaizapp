@@ -28,13 +28,20 @@ export class AuthService {
       }
 
       const data: ApiResponse<DevTokenResponse> = await response.json();
-      console.log('✅ [AuthService] Success response:', JSON.stringify(data, null, 2));
       
-      if (!data.success || !data.data) {
-        throw new Error(data.message || 'Failed to generate dev token');
+      if (!data.success) {
+        throw new Error(data.message || 'API request failed');
+      }
+      
+      if (data.error) {
+        throw new Error(typeof data.error === 'string' ? data.error : 'API returned an error');
+      }
+      
+      if (!data.data) {
+        throw new Error('No data returned from API');
       }
 
-      console.log('🎉 [AuthService] Dev token generated successfully');
+      ('🎉 [AuthService] Dev token generated successfully');
       return data.data;
     } catch (error) {
       console.error('❌ [AuthService] generateDevToken error:', error);

@@ -25,7 +25,9 @@ const BankScreen: React.FC = () => {
         setBanks(banksData);
       } catch (error) {
         console.error('Error fetching banks:', error);
-        Alert.alert('Error', 'No se pudieron cargar los bancos');
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+        Alert.alert('Error', `No se pudieron cargar los bancos: ${errorMessage}`);
+        setBanks([]); // Ensure banks array is empty on error
       } finally {
         setIsLoading(false);
       }
@@ -47,15 +49,22 @@ const BankScreen: React.FC = () => {
 
     setIsUpdating(true);
     try {
-      // Use hardcoded user ID "1" as expected by the API
-      const userId = "1";
-      
-      await UsersService.updateUser(userId, { bankId: selectedBank });
-      Alert.alert('Éxito', 'Banco actualizado correctamente');
-      // Optionally navigate back or show success state
+      // Use hardcoded user ID 1 as expected by the API
+      const userId = 1;
+      await UsersService.updateUser(userId, { bankId: parseInt(selectedBank) });
+      Alert.alert('Éxito', 'Banco actualizado correctamente', [
+        {
+          text: 'OK',
+          onPress: () => {
+            // Reset selection after successful update
+            setSelectedBank(null);
+          }
+        }
+      ]);
     } catch (error) {
       console.error('Error updating user bank:', error);
-      Alert.alert('Error', `No se pudo actualizar el banco: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      Alert.alert('Error', `No se pudo actualizar el banco: ${errorMessage}`);
     } finally {
       setIsUpdating(false);
     }
@@ -84,39 +93,63 @@ const BankScreen: React.FC = () => {
           </ThemedText>
           
           <View className="flex-1">
-            {banks.map((bank, index) => {
-              const isSelected = selectedBank === bank.id.toString();
-              return (
-                <ThemedTouchableOpacity
-                  key={bank.id}
-                  className="flex-row items-center p-4 rounded-xl mb-3"
-                  variant="surface"
-                  onPress={() => handleBankPress(bank.id.toString())}
-                  activeOpacity={1}
-                  style={{
-                    minHeight: 80,
-                    backgroundColor: isSelected ? colors.primary + '20' : '#f5f5f5',
-                    borderWidth: isSelected ? 2 : 0,
-                    borderColor: isSelected ? colors.primary : 'transparent',
-                    opacity: 1,
-                  }}
-                >
-                <ThemedText 
-                  className="text-lg font-medium flex-1"
-                  style={{ color: isSelected ? colors.primary : undefined }}
-                >
-                  {bank.name}
+            {banks.length === 0 ? (
+              <View className="flex-1 items-center justify-center p-8">
+                <Ionicons 
+                  name="business-outline" 
+                  size={64} 
+                  color={colors.textSecondary + '60'} 
+                />
+                <ThemedText className="text-lg font-medium mt-4 text-center">
+                  No hay bancos disponibles
                 </ThemedText>
-                {isSelected && (
-                  <Ionicons 
-                    name="checkmark-circle" 
-                    size={24} 
-                    color={colors.primary} 
-                  />
-                )}
-              </ThemedTouchableOpacity>
-              );
-            })}
+                <ThemedText className="text-sm text-center mt-2 opacity-70">
+                  Intenta recargar la página o contacta al soporte
+                </ThemedText>
+              </View>
+            ) : (
+              banks.map((bank, index) => {
+                const isSelected = selectedBank === bank.id.toString();
+                return (
+                  <ThemedTouchableOpacity
+                    key={bank.id}
+                    className="flex-row items-center p-4 rounded-xl mb-3"
+                    variant="surface"
+                    onPress={() => handleBankPress(bank.id.toString())}
+                    activeOpacity={1}
+                    style={{
+                      minHeight: 80,
+                      backgroundColor: isSelected ? colors.primary + '20' : '#f5f5f5',
+                      borderWidth: isSelected ? 2 : 0,
+                      borderColor: isSelected ? colors.primary : 'transparent',
+                      opacity: 1,
+                    }}
+                  >
+                    <View className="flex-1">
+                      <ThemedText 
+                        className="text-lg font-medium"
+                        style={{ color: isSelected ? colors.primary : undefined }}
+                      >
+                        {bank.name}
+                      </ThemedText>
+                      <ThemedText 
+                        className="text-sm opacity-70 mt-1"
+                        style={{ color: isSelected ? colors.primary : undefined }}
+                      >
+                        {bank.type} • Acepta {bank.fileAcceptance}
+                      </ThemedText>
+                    </View>
+                    {isSelected && (
+                      <Ionicons 
+                        name="checkmark-circle" 
+                        size={24} 
+                        color={colors.primary} 
+                      />
+                    )}
+                  </ThemedTouchableOpacity>
+                );
+              })
+            )}
           </View>
           
           {/* Confirm Button */}

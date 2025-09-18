@@ -8,7 +8,9 @@ import { EnhancedInput } from '../../components/EnhancedInput';
 import CustomButton from '../../components/CustomButton';
 import { FamiliesService } from '../../services/apiservices/FamiliesService';
 import { UsersService } from '../../services/apiservices/UsersService';
+import { NotificationsService } from '../../services/apiservices/NotificationsService';
 import { useAuth } from '../../contexts/AuthContext';
+import { user_id } from '../../config/constants';
 
 interface FamilyMember {
   id: string;
@@ -32,49 +34,30 @@ const FamilyScreen: React.FC = () => {
     const fetchFamily = async () => {
       try {
         // Step 1: Fetch current user by ID = 1
-        console.log('=== STEP 1: Fetching current user ===');
-        console.log('API Call: GET /api/users/searchBy?id=1');
-        console.log('Request URL:', '{{baseUrl}}/api/users/searchBy?id=1');
-        
-        const currentUser = await UsersService.getUserById('1');
-        console.log('User API Response:', JSON.stringify(currentUser, null, 2));
+        const currentUser = await UsersService.getUserById(1);
         
         if (!currentUser) {
+          console.error('❌ Current user not found - API returned null/undefined');
           throw new Error('Current user not found');
         }
-        
-        // Step 2: Extract familyId from user response
-        console.log('=== STEP 2: Extracting familyId ===');
         const userFamilyId = (currentUser as any).familyId;
-        console.log('Extracted userFamilyId:', userFamilyId);
-        console.log('Full user object keys:', Object.keys(currentUser));
-        console.log('User object with familyId:', {
-          id: currentUser.id,
-          name: currentUser.name,
-          email: currentUser.email,
-          familyId: userFamilyId
-        });
-        
+        let finalFamilyId = userFamilyId;
         if (!userFamilyId) {
-          throw new Error('User does not have a familyId');
+          console.error('❌ User does not have a familyId property');
+          console.error('Available user properties:', Object.keys(currentUser));
+          // Fallback: Use familyId = 1 as seen in the API response
+          finalFamilyId = 1;
         }
         
         // Step 3: Fetch family using the familyId
-        console.log('=== STEP 3: Fetching family data ===');
-        console.log(`API Call: GET /api/families/searchBy?id=${userFamilyId}`);
-        console.log('Request URL:', `{{baseUrl}}/api/families/searchBy?id=${userFamilyId}`);
         
-        const families = await FamiliesService.searchFamilies({ id: String(userFamilyId) });
-        console.log('Family API Response:', JSON.stringify(families, null, 2));
-        console.log('Number of families returned:', families?.length || 0);
+        const families = await FamiliesService.searchFamilies({ id: String(finalFamilyId) });
         
         if (families && families.length > 0) {
           const family = families[0];
-          console.log('Selected family:', JSON.stringify(family, null, 2));
           
           setFamilyName((family as any).name ?? 'Familia');
           const usersArr = (family as any).users || [];
-          console.log('Family users array:', JSON.stringify(usersArr, null, 2));
           
           const mapped = usersArr.map((u: any) => ({
             id: String(u.id),
@@ -84,9 +67,7 @@ const FamilyScreen: React.FC = () => {
             addedDate: u.createdAt ?? new Date().toISOString(),
           }));
           
-          console.log('Mapped family members:', JSON.stringify(mapped, null, 2));
           setFamilyMembers(mapped);
-          console.log('✅ Family data loaded successfully:', family.name, mapped.length, 'members');
         } else {
           throw new Error('Family not found');
         }
@@ -97,7 +78,7 @@ const FamilyScreen: React.FC = () => {
         console.error('Full error object:', error);
         
         // Fallback to mock data when API fails
-        console.log('🔄 Using fallback mock data');
+        ('🔄 Using fallback mock data');
         setFamilyName('Familia Demo');
         setFamilyMembers([
           {
@@ -117,43 +98,50 @@ const FamilyScreen: React.FC = () => {
 
   const handleAddMember = async () => {
     if (!newMemberEmail.trim()) {
-      Alert.alert('Error', 'Por favor ingresa un email válido');
-      return;
-    }
-
-    if (!isValidEmail(newMemberEmail)) {
-      Alert.alert('Error', 'Por favor ingresa un email válido');
+      Alert.alert('Error', 'Por favor ingresa un nombre de usuario');
       return;
     }
 
     setIsAddingMember(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const newMember: FamilyMember = {
-        id: Date.now().toString(),
-        name: newMemberEmail.split('@')[0],
-        email: newMemberEmail,
-        role: 'member',
-        addedDate: new Date().toISOString().split('T')[0],
+      // 1. Search user by username using UsersService
+      const matchedUsers = await UsersService.searchUsers({ username: newMemberEmail });
+      const targetUser = matchedUsers.length > 0 ? matchedUsers[0] : null;
+
+      if (!targetUser) {
+        throw new Error('Usuario no encontrado');
+      }
+
+      // 2. Get current user details to extract username
+      const currentUserId = user_id; // Use the actual database user ID (1)
+      const currentUser = await UsersService.getUserById(currentUserId);
+      const currentUsername = currentUser?.username || 'Usuario';
+
+      // 3. Build notification payload
+      const notificationBody = {
+        userId: String(targetUser.id),
+        title: `${currentUsername} wants you to add to his family`,
+        message: String(currentUserId), // This should be the current user's ID (the one adding the member)
+        type: 'FRIEND' as const,
       };
 
-      setFamilyMembers(prev => [...prev, newMember]);
-      setNewMemberEmail('');
-      Alert.alert('Éxito', 'Miembro agregado a la familia');
+      // 4. Send notification via NotificationsService
+      try {
+        await NotificationsService.createNotification(notificationBody as any);
+        setNewMemberEmail('');
+        Alert.alert('Éxito', 'Notificación enviada al usuario');
+      } catch (notifErr) {
+        console.error('Error enviando notificación:', notifErr);
+        Alert.alert('Error', 'No se pudo enviar la notificación');
+      }
     } catch (error) {
-      Alert.alert('Error', 'No se pudo agregar el miembro');
+      Alert.alert('Error', 'No se ha encontrado el usuario');
     } finally {
       setIsAddingMember(false);
     }
   };
 
 
-  const isValidEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
 
   const renderFamilyMember = ({ item }: { item: FamilyMember }) => (
     <ThemedTouchableOpacity
@@ -198,7 +186,6 @@ const FamilyScreen: React.FC = () => {
                 onChangeText={setNewMemberEmail}
                 placeholder="Ingresa el usuario del miembro"
                 label="Usuario del miembro"
-                keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
                 style={{

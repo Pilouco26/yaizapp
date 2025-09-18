@@ -1,4 +1,5 @@
 import { API_CONFIG, getFullApiUrlWithAuth, getDefaultHeaders } from '../../utils/config';
+import { ApiResponse } from '../types';
 
 export type APIBank = {
   id: number;
@@ -11,7 +12,9 @@ export type APIBank = {
 };
 
 export type BanksResponse = {
-  data: APIBank[];
+  banks: APIBank[];
+  success: boolean;
+  message: string;
 };
 
 /**
@@ -35,8 +38,25 @@ export class BanksService {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data: BanksResponse = await response.json();
-      return data.data;
+      const apiResponse: ApiResponse<BanksResponse> = await response.json();
+      
+      if (!apiResponse.data?.success) {
+        throw new Error(apiResponse.message || 'API request failed');
+      }
+      
+      if (apiResponse.error) {
+        throw new Error(typeof apiResponse.error === 'string' ? apiResponse.error : 'API returned an error');
+      }
+      
+      if (!apiResponse.data) {
+        throw new Error('No data returned from API');
+      }
+      
+      if (!apiResponse.data.banks) {
+        throw new Error('No banks data returned from API');
+      }
+      
+      return apiResponse.data.banks;
     } catch (error) {
       throw new Error(`Failed to fetch banks: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }

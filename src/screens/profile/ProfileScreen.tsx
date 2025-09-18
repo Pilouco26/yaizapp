@@ -9,7 +9,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { ThemedView, ThemedText, ThemedTouchableOpacity } from '../../components/ThemeWrapper';
 import { UsersService } from '../../services';
 import { user_id } from '../../config/constants';
-import { User as ApiUser } from '../../services/types';
+import { User as ApiUser, UserBodyResponse } from '../../services/types';
 
 const ProfileScreen: React.FC = () => {
   const { colors, theme, toggleTheme } = useTheme();
@@ -39,8 +39,18 @@ const ProfileScreen: React.FC = () => {
     const fetchUserData = async () => {
       try {
         const users = await UsersService.searchUsers({ id: user_id });
-        if (users.length > 0) {
-          setApiUser(users[0]);
+        
+        // The service should return User[] directly
+        if (users && users.length > 0) {
+          // Check if the first user is actually a user object or a response object
+          const firstUser = users[0] as ApiUser | UserBodyResponse;
+          if ('user' in firstUser) {
+            // This is a UserBodyResponse object with nested user data
+            setApiUser(firstUser.user);
+          } else {
+            // This is a direct User object
+            setApiUser(firstUser);
+          }
         } else {
         }
       } catch (error) {
@@ -52,8 +62,8 @@ const ProfileScreen: React.FC = () => {
   }, []);
 
   // Debug logging for user data
-  useEffect(() => {
-  }, [user]);
+  useEffect(() => {   
+  }, [apiUser]);
 
   const getProviderIcon = () => {
     switch (authProvider) {

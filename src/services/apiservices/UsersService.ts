@@ -63,12 +63,11 @@ export class UsersService {
    */
   static async searchUsers(params: UserSearchParams, authToken?: string): Promise<User[]> {
     try {
-      console.log('🔍 UsersService.searchUsers called with params:', params);
       
       const searchParams = new URLSearchParams();
       
       if (params.id) {
-        searchParams.append('id', params.id);
+        searchParams.append('id', params.id.toString());
       }
       if (params.username) {
         searchParams.append('username', params.username);
@@ -78,7 +77,6 @@ export class UsersService {
       }
 
       const apiUrl = getFullApiUrlWithAuth(`${API_CONFIG.ENDPOINTS.USERS.SEARCH}?${searchParams.toString()}`);
-      console.log('🌐 UsersService.searchUsers API URL:', apiUrl);
       
       const headers = getDefaultHeaders();
 
@@ -87,8 +85,6 @@ export class UsersService {
         headers['Authorization'] = `Bearer ${authToken}`;
       }
 
-      console.log('📤 UsersService.searchUsers request headers:', headers);
-      console.log('📤 UsersService.searchUsers making GET request...');
 
       let response;
       try {
@@ -101,8 +97,6 @@ export class UsersService {
         throw fetchError;
       }
 
-      console.log('📥 UsersService.searchUsers response status:', response.status);
-      console.log('📥 UsersService.searchUsers response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -117,7 +111,6 @@ export class UsersService {
       // can always work with a `User[]`.
 
       const raw: Partial<ApiResponse<User | User[]>> = await response.json();
-      console.log('📥 UsersService.searchUsers raw response:', JSON.stringify(raw, null, 2));
 
       // Default `success` to true when the field is missing (many read-only endpoints omit it)
       const success = typeof raw.success === 'boolean' ? raw.success : true;
@@ -126,9 +119,21 @@ export class UsersService {
       let usersData: User[] | undefined;
 
       if (raw.data !== undefined) {
-        // Standard YaizApp format: { data: User | User[] }
-        usersData = Array.isArray(raw.data) ? raw.data : [raw.data];
-        console.log('📊 UsersService.searchUsers processed data (standard format):', usersData.length, 'users');
+        if (Array.isArray(raw.data)) {
+          // Handle nested response structure where each item has success, message, and user properties
+          usersData = raw.data
+            .filter((item: any) => item.success && item.user)
+            .map((item: any) => item.user);
+        } else if ((raw.data as any).users && Array.isArray((raw.data as any).users)) {
+          // Handle API response structure: { data: { success: true, users: [...] } }
+          usersData = (raw.data as any).users;
+        } else if ((raw.data as any).user) {
+          // Handle API response structure: { data: { success: true, user: {...} } }
+          usersData = [(raw.data as any).user];
+        } else {
+          // Single user object
+          usersData = [raw.data];
+        }
       } else if (raw && Object.keys(raw).length > 0) {
         // Fallback: API returned the User object/array directly without wrappers
         if (Array.isArray(raw)) {
@@ -136,7 +141,6 @@ export class UsersService {
         } else {
           usersData = [raw as unknown as User];
         }
-        console.log('📊 UsersService.searchUsers processed data (fallback format):', usersData.length, 'users');
       }
 
       const data: ApiResponse<User[]> = {
@@ -146,14 +150,12 @@ export class UsersService {
         error: raw.error,
       };
       
-      console.log('📊 UsersService.searchUsers final processed data:', JSON.stringify(data, null, 2));
       
       if (!data.success || !data.data) {
         console.error('❌ UsersService.searchUsers data validation failed:', { success: data.success, hasData: !!data.data, message: data.message });
         throw new Error(data.message || 'Failed to search users');
       }
 
-      console.log('✅ UsersService.searchUsers returning', data.data.length, 'users');
       return data.data;
     } catch (error) {
       throw new Error(`Failed to search users: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -188,8 +190,16 @@ export class UsersService {
 
       const data: ApiResponse<User> = await response.json();
       
-      if (!data.success || !data.data) {
-        throw new Error(data.message || 'Failed to create user');
+      if (!data.success) {
+        throw new Error(data.message || 'API request failed');
+      }
+      
+      if (data.error) {
+        throw new Error(typeof data.error === 'string' ? data.error : 'API returned an error');
+      }
+      
+      if (!data.data) {
+        throw new Error('No data returned from API');
       }
 
       return data.data;
@@ -202,7 +212,7 @@ export class UsersService {
    * Update existing user
    * PUT /api/users/{id}
    */
-  static async updateUser(userId: string, userData: UpdateUserRequest, authToken?: string): Promise<User> {
+  static async updateUser(userId: number, userData: UpdateUserRequest, authToken?: string): Promise<User> {
     try {
       const apiUrl = getFullApiUrlWithAuth(`${API_CONFIG.ENDPOINTS.USERS.BASE}/${userId}`);
       
@@ -224,15 +234,21 @@ export class UsersService {
         throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
       }
 
-      const data: any = await response.json();
+      const data: ApiResponse<User> = await response.json();
       
-      // Use response status to determine success instead of checking for success field
-      if (response.status >= 200 && response.status < 300) {
-        // Return the data directly since the API returns the user object directly
-        return data.data || data;
-      } else {
-        throw new Error(data.message || 'Failed to update user');
+      if (!data.success) {
+        throw new Error(data.message || 'API request failed');
       }
+      
+      if (data.error) {
+        throw new Error(typeof data.error === 'string' ? data.error : 'API returned an error');
+      }
+      
+      if (!data.data) {
+        throw new Error('No data returned from API');
+      }
+
+      return data.data;
     } catch (error) {
       throw new Error(`Failed to update user: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
@@ -242,7 +258,7 @@ export class UsersService {
    * Delete user
    * DELETE /api/users/{id}
    */
-  static async deleteUser(userId: string, authToken?: string): Promise<void> {
+  static async deleteUser(userId: number, authToken?: string): Promise<void> {
     try {
       const apiUrl = getFullApiUrlWithAuth(`${API_CONFIG.ENDPOINTS.USERS.BASE}/${userId}`);
       
@@ -266,7 +282,11 @@ export class UsersService {
       const data: ApiResponse = await response.json();
       
       if (!data.success) {
-        throw new Error(data.message || 'Failed to delete user');
+        throw new Error(data.message || 'API request failed');
+      }
+      
+      if (data.error) {
+        throw new Error(typeof data.error === 'string' ? data.error : 'API returned an error');
       }
     } catch (error) {
       throw new Error(`Failed to delete user: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -276,11 +296,9 @@ export class UsersService {
   /**
    * Get user by ID
    */
-  static async getUserById(userId: string, authToken?: string): Promise<User | null> {
+  static async getUserById(userId: number, authToken?: string): Promise<User | null> {
     try {
-      console.log(`🔍 UsersService.getUserById called with userId: ${userId}`);
       const users = await this.searchUsers({ id: userId }, authToken);
-      console.log(`📊 UsersService.getUserById returned ${users.length} users`);
       return users.length > 0 ? users[0] : null;
     } catch (error) {
       console.error(`❌ UsersService.getUserById error for userId ${userId}:`, error);

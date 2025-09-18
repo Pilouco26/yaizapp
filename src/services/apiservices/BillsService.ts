@@ -1,4 +1,5 @@
 import { API_CONFIG, getFullApiUrlWithAuth, getDefaultHeaders } from '../../utils/config';
+import { ApiResponse } from '../types';
 
 export type APIRawBill = {
   Data: string;
@@ -14,6 +15,8 @@ export type APIRawBill = {
 export const getBills = async (): Promise<any[]> => {
   try {
     const apiUrl = getFullApiUrlWithAuth(API_CONFIG.ENDPOINTS.BILLS);
+    console.log('apiUrl', apiUrl);
+    console.log("high");
     
     const response = await fetch(apiUrl, {
       method: 'GET',
@@ -23,9 +26,24 @@ export const getBills = async (): Promise<any[]> => {
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
+    console.log('response', response);
 
-    const data = await response.json();
-    return data;
+    const data: ApiResponse<any[]> = await response.json();
+    
+    if (!data.success) {
+
+      throw new Error(data.message || 'API request failed');
+    }
+    
+    if (data.error) {
+      throw new Error(typeof data.error === 'string' ? data.error : 'API returned an error');
+    }
+    
+    if (!data.data) {
+      throw new Error('No data returned from API');
+    }
+
+    return data.data;
   } catch (error) {
     throw new Error(`Failed to fetch bills: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
@@ -50,9 +68,21 @@ export const uploadBills = async (billsData: any[]): Promise<any> => {
       throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
     }
 
-    const data = await response.json();
+    const data: ApiResponse<any> = await response.json();
     
-    return data;
+    if (!data.success) {
+      throw new Error(data.message || 'API request failed');
+    }
+    
+    if (data.error) {
+      throw new Error(typeof data.error === 'string' ? data.error : 'API returned an error');
+    }
+    
+    if (!data.data) {
+      throw new Error('No data returned from API');
+    }
+    
+    return data.data;
   } catch (error) {
     throw new Error(`Failed to upload bills: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { OAuthUser } from '../services/OAuthService';
+import { HealthService } from '../services/apiservices/HealthService';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -39,6 +40,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const checkAuthStatus = async () => {
     try {
+      // Perform health check on app initialization
+      ('🏥 Performing health check on app initialization...');
+      try {
+        const healthData = await HealthService.getHealth();
+        ('✅ Health check successful:', {
+          status: healthData.status,
+          version: healthData.version,
+          uptime: healthData.uptime,
+          services: healthData.services
+        });
+      } catch (healthError) {
+        console.warn('⚠️ Health check failed (app will continue):', healthError);
+        // Don't throw error - app should continue even if health check fails
+      }
+
       const authStatus = await AsyncStorage.getItem('auth_status');
       const userData = await AsyncStorage.getItem('user_data');
       
@@ -197,7 +213,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(null);
       setIsAuthenticated(false);
       
-      console.log('User logged out successfully');
+      ('User logged out successfully');
     } catch (error) {
       console.error('Logout error:', error);
       // Even if sign out fails, clear local state

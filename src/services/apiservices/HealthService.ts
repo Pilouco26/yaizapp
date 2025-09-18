@@ -26,8 +26,16 @@ export class HealthService {
 
       const data: ApiResponse<HealthResponse> = await response.json();
       
-      if (!data.success || !data.data) {
-        throw new Error(data.message || 'Failed to get health information');
+      if (!data.success) {
+        throw new Error(data.message || 'API request failed');
+      }
+      
+      if (data.error) {
+        throw new Error(typeof data.error === 'string' ? data.error : 'API returned an error');
+      }
+      
+      if (!data.data) {
+        throw new Error('No data returned from API');
       }
 
       return data.data;

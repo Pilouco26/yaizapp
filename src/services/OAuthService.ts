@@ -15,7 +15,7 @@ export const initializeOAuth = () => {
   try {
     // Initialize WebBrowser for OAuth
     WebBrowser.maybeCompleteAuthSession();
-    console.log('Expo WebBrowser initialized successfully');
+    ('Expo WebBrowser initialized successfully');
   } catch (error) {
     console.error('Error initializing OAuth:', error);
   }
@@ -31,7 +31,7 @@ export class GoogleOAuthService {
         throw new Error('Google CLIENT_ID not configured');
       }
       
-      console.log('Starting Google OAuth with client ID:', config.GOOGLE.CLIENT_ID);
+      ('Starting Google OAuth with client ID:', config.GOOGLE.CLIENT_ID);
       
       // Create OAuth URL manually
       const redirectUri = getRedirectUri();
@@ -45,32 +45,32 @@ export class GoogleOAuthService {
         `&prompt=consent` +
         `&state=${encodeURIComponent('google_oauth_state')}`;
       
-      console.log('Opening OAuth URL:', authUrl);
+      ('Opening OAuth URL:', authUrl);
       
       // Open OAuth URL in WebBrowser
       const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
       
-      console.log('WebBrowser result:', result);
+      ('WebBrowser result:', result);
       
       if (result.type === 'success' && result.url) {
-        console.log('OAuth successful, extracting code from URL...');
+        ('OAuth successful, extracting code from URL...');
         
         // Extract authorization code from URL
         const url = new URL(result.url);
         const code = url.searchParams.get('code');
         
         if (code) {
-          console.log('Authorization code received, exchanging for token...');
+          ('Authorization code received, exchanging for token...');
           
           // Exchange authorization code for access token
           const tokenResponse = await this.exchangeCodeForToken(code, redirectUri);
           
-          console.log('Token exchange successful, getting user info...');
+          ('Token exchange successful, getting user info...');
           
           // Get user info using access token
           const userInfo = await this.getUserInfo(tokenResponse.access_token);
           
-          console.log('User info retrieved:', userInfo);
+          ('User info retrieved:', userInfo);
           
           // Create user object
           const user: OAuthUser = {
@@ -81,16 +81,16 @@ export class GoogleOAuthService {
             provider: 'google',
           };
           
-          console.log('Google OAuth successful, user:', user);
+          ('Google OAuth successful, user:', user);
           return user;
         } else {
           throw new Error('No authorization code received');
         }
       } else if (result.type === 'cancel') {
-        console.log('OAuth was cancelled by user');
+        ('OAuth was cancelled by user');
         throw new Error('Google OAuth was cancelled');
       } else {
-        console.log('OAuth failed with result type:', result.type);
+        ('OAuth failed with result type:', result.type);
         throw new Error('Google OAuth failed');
       }
       
@@ -150,7 +150,7 @@ export class GoogleOAuthService {
   
   static async signOut(): Promise<void> {
     try {
-      console.log('Google sign out completed');
+      ('Google sign out completed');
     } catch (error) {
       console.error('Google sign out error:', error);
     }
@@ -184,12 +184,12 @@ export class FacebookOAuthService {
         `&response_type=code` +
         `&scope=${encodeURIComponent(permissions)}`;
       
-      console.log('Starting Facebook OAuth with URL:', authUrl);
+      ('Starting Facebook OAuth with URL:', authUrl);
       
       // Open OAuth URL in WebBrowser
       const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
       
-      console.log('Facebook OAuth result:', result);
+      ('Facebook OAuth result:', result);
       
       if (result.type === 'success' && result.url) {
         // Extract authorization code from URL
@@ -212,7 +212,7 @@ export class FacebookOAuthService {
             provider: 'facebook',
           };
           
-          console.log('Facebook OAuth successful, user:', user);
+          ('Facebook OAuth successful, user:', user);
           return user;
         } else {
           throw new Error('No authorization code received');
@@ -274,7 +274,7 @@ export class FacebookOAuthService {
   }
   
   static async signOut(): Promise<void> {
-    console.log('Facebook sign out completed');
+    ('Facebook sign out completed');
   }
 }
 

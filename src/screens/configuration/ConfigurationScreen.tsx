@@ -18,6 +18,10 @@ const ConfigurationScreen: React.FC = () => {
     navigation.navigate('Family' as never);
   };
 
+  const handleNotificationsPress = () => {
+    navigation.navigate('Notifications' as never);
+  };
+
   const configurationOptions = [
     {
       id: 'bank',
@@ -35,7 +39,7 @@ const ConfigurationScreen: React.FC = () => {
       id: 'notifications',
       title: 'Notificaciones',
       icon: 'notifications',
-      onPress: () => {},
+      onPress: handleNotificationsPress,
     },
     {
       id: 'privacy',

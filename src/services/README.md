@@ -181,7 +181,7 @@ All services include comprehensive error handling and will throw descriptive err
 ```typescript
 try {
   const users = await UsersService.getAllUsers(authToken);
-  console.log('Users loaded successfully:', users);
+  ('Users loaded successfully:', users);
 } catch (error) {
   console.error('Failed to load users:', error.message);
   // Handle error appropriately
