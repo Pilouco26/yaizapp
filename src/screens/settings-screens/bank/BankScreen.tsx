@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '../../contexts/ThemeContext';
-import { ThemedView, ThemedText, ThemedTouchableOpacity } from '../../components/ThemeWrapper';
-import { BanksService, UsersService } from '../../services';
-import { APIBank } from '../../services/apiservices/BanksService';
-import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../../contexts/ThemeContext';
+import { ThemedView, ThemedText, ThemedTouchableOpacity } from '../../../components/ThemeWrapper';
+import { BanksService, UsersService } from '../../../services';
+import { APIBank } from '../../../services/apiservices/BanksService';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const BankScreen: React.FC = () => {
   const { colors } = useTheme();

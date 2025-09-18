@@ -228,6 +228,7 @@ export class NotificationsService {
       }
 
       const data: ApiResponse = await response.json();
+      console.log('🔔 NotificationsService.deleteNotification - data:', data);
       
       if (!data.data?.success) {
         throw new Error(data.message || 'API request failed');

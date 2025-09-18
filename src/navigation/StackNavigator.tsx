@@ -2,13 +2,13 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useTheme } from '../contexts/ThemeContext';
 import TabNavigator from './TabNavigator';
-import ConfigurationScreen from '../screens/configuration/ConfigurationScreen';
-import BankScreen from '../screens/bank/BankScreen';
-import FamilyScreen from '../screens/family/FamilyScreen';
-import NotificationsScreen from '../screens/notifications/NotificationsScreen';
+import ConfigurationScreen from '../screens/settings-screens/configuration/ConfigurationScreen';
+import BankScreen from '../screens/settings-screens/bank/BankScreen';
+import FamilyScreen from '../screens/settings-screens/family/FamilyScreen';
+import NotificationsScreen from '../screens/settings-screens/notifications/NotificationsScreen';
 
 export type RootStackParamList = {
-  MainTabs: undefined;
+  Perfil: undefined;
   Configuration: undefined;
   Bank: undefined;
   Family: undefined;
@@ -34,7 +34,7 @@ const StackNavigator: React.FC = () => {
       }}
     >
       <Stack.Screen 
-        name="MainTabs" 
+        name="Perfil" 
         component={TabNavigator}
         options={{ headerShown: false }}
       />
@@ -44,6 +44,7 @@ const StackNavigator: React.FC = () => {
         options={{ 
           title: 'Configuración',
           headerShown: true,
+          headerBackTitle: 'Perfil',
         }}
       />
       <Stack.Screen 
@@ -52,6 +53,7 @@ const StackNavigator: React.FC = () => {
         options={{ 
           title: 'Banco',
           headerShown: true,
+          headerBackTitle: 'Configuración',
         }}
       />
       <Stack.Screen 
@@ -60,6 +62,7 @@ const StackNavigator: React.FC = () => {
         options={{ 
           title: 'Familia',
           headerShown: true,
+          headerBackTitle: 'Configuración',
         }}
       />
       <Stack.Screen 
@@ -68,6 +71,7 @@ const StackNavigator: React.FC = () => {
         options={{ 
           title: 'Notificaciones',
           headerShown: true,
+          headerBackTitle: 'Configuración',
         }}
       />
     </Stack.Navigator>

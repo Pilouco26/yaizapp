@@ -4,12 +4,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useAuth } from '../../contexts/AuthContext';
-import { ThemedView, ThemedText, ThemedTouchableOpacity } from '../../components/ThemeWrapper';
-import { UsersService } from '../../services';
-import { user_id } from '../../config/constants';
-import { User as ApiUser, UserBodyResponse } from '../../services/types';
+import { useTheme } from '../../../contexts/ThemeContext';
+import { useAuth } from '../../../contexts/AuthContext';
+import { ThemedView, ThemedText, ThemedTouchableOpacity } from '../../../components/ThemeWrapper';
+import { UsersService } from '../../../services';
+import { user_id } from '../../../config/constants';
+import { User as ApiUser, UserBodyResponse } from '../../../services/types';
 
 const ProfileScreen: React.FC = () => {
   const { colors, theme, toggleTheme } = useTheme();

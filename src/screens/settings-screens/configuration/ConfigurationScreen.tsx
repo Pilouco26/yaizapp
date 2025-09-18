@@ -3,8 +3,8 @@ import { View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { useTheme } from '../../contexts/ThemeContext';
-import { ThemedView, ThemedText, ThemedTouchableOpacity } from '../../components/ThemeWrapper';
+import { useTheme } from '../../../contexts/ThemeContext';
+import { ThemedView, ThemedText, ThemedTouchableOpacity } from '../../../components/ThemeWrapper';
 
 const ConfigurationScreen: React.FC = () => {
   const { colors } = useTheme();

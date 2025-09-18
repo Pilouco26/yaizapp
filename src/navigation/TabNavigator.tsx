@@ -4,9 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HomeScreen from '../screens/home/HomeScreen';
-import SavingsScreen from '../screens/savings/SavingsScreen';
-import BillsScreen from '../screens/bills/BillsScreen';
-import ProfileScreen from '../screens/profile/ProfileScreen';
+import SavingsScreen from '../screens/main/savings/SavingsScreen';
+import BillsScreen from '../screens/main/bills/BillsScreen';
+import ProfileScreen from '../screens/main/profile/ProfileScreen';
 import { useTheme } from '../contexts/ThemeContext';
 import type { TabParamList } from './types';
 

@@ -1,5 +1,5 @@
 import { API_CONFIG, getFullApiUrlWithAuth, getDefaultHeaders } from '../../utils/config';
-import { User, CreateUserRequest, UpdateUserRequest, UserSearchParams, ApiResponse } from '../types';
+import { User, CreateUserRequest, UpdateUserRequest, UserSearchParams, ApiResponse, UserBodyResponse } from '../types';
 
 /**
  * Users Service
@@ -234,9 +234,9 @@ export class UsersService {
         throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
       }
 
-      const data: ApiResponse<User> = await response.json();
+      const data: ApiResponse<UserBodyResponse> = await response.json();
       
-      if (!data.success) {
+      if (!data.data?.success) {
         throw new Error(data.message || 'API request failed');
       }
       
@@ -248,7 +248,7 @@ export class UsersService {
         throw new Error('No data returned from API');
       }
 
-      return data.data;
+      return data.data as any;
     } catch (error) {
       throw new Error(`Failed to update user: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }

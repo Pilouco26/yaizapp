@@ -8,13 +8,13 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import CSVImportModal from '../../components/CSVImportModal';
-import { useBillsContext } from '../../contexts/BillsContext';
-import { Bill } from '../../utils/types';
-import { formatDate } from '../../utils/helpers'; 
-import { ThemedView, ThemedText, ThemedTouchableOpacity, ThemedScrollView, ThemedCard } from '../../components/ThemeWrapper';
-import { useTheme } from '../../contexts/ThemeContext';
-import { user_id } from '../../config/constants';
+import CSVImportModal from '../../../components/CSVImportModal';
+import { useBillsContext } from '../../../contexts/BillsContext';
+import { Bill } from '../../../utils/types';
+import { formatDate } from '../../../utils/helpers'; 
+import { ThemedView, ThemedText, ThemedTouchableOpacity, ThemedScrollView, ThemedCard } from '../../../components/ThemeWrapper';
+import { useTheme } from '../../../contexts/ThemeContext';
+import { user_id } from '../../../config/constants';
 
 const BillsScreen: React.FC = () => {
   const [showImportModal, setShowImportModal] = useState(false);
@@ -85,7 +85,7 @@ const BillsScreen: React.FC = () => {
     try {
       setIsLoadingTransactions(true);
       
-      const { getFullApiUrlWithAuth, getDefaultHeaders, API_CONFIG } = await import('../../utils/config');
+      const { getFullApiUrlWithAuth, getDefaultHeaders, API_CONFIG } = await import('../../../utils/config');
       const txUrl = getFullApiUrlWithAuth(`${API_CONFIG.ENDPOINTS.TRANSACTIONS.SEARCH}?userId=${user_id}`);
       
       

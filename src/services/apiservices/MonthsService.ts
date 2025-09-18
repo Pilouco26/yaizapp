@@ -1,5 +1,5 @@
 import { API_CONFIG, getFullApiUrlWithAuth, getDefaultHeaders } from '../../utils/config';
-import { Month, CreateMonthRequest, UpdateMonthRequest, MonthSearchParams, ApiResponse } from '../types';
+import { Month, CreateMonthRequest, UpdateMonthRequest, MonthSearchParams, ApiResponse, MonthResponse } from '../types';
 
 /**
  * Months Service
@@ -26,21 +26,17 @@ export class MonthsService {
         throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
       }
 
-      const data: ApiResponse<Month[]> = await response.json();
+      const data: MonthResponse = await response.json();
       
       if (!data.success) {
         throw new Error(data.message || 'API request failed');
       }
       
-      if (data.error) {
-        throw new Error(typeof data.error === 'string' ? data.error : 'API returned an error');
-      }
-      
-      if (!data.data) {
-        throw new Error('No data returned from API');
+      if (!data.data || !data.data.months) {
+        throw new Error('No months data returned from API');
       }
 
-      return data.data;
+      return data.data.months;
     } catch (error) {
       throw new Error(`Failed to get months: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
@@ -90,7 +86,7 @@ export class MonthsService {
 
       const responseText = await response.text();
       
-      let data: ApiResponse<Month[]>;
+      let data: MonthResponse;
       try {
         data = JSON.parse(responseText);
       } catch (parseError) {
@@ -102,24 +98,21 @@ export class MonthsService {
         return data;
       }
       
-      // Check if API returns data without success wrapper (just {data: [...]})
-      if (data.data && Array.isArray(data.data) && data.success === undefined) {
-        return data.data;
+      // Check if API returns data without success wrapper (just {data: {months: [...]}})
+      if (data.data && data.data.months && Array.isArray(data.data.months) && data.success === undefined) {
+        return data.data.months;
       }
       
       if (!data.success) {
+        console.error('❌ MonthsService.searchMonths data validation failed:', { success: data.success, hasData: !!data.data, message: data.message });
         throw new Error(data.message || 'API request failed');
       }
       
-      if (data.error) {
-        throw new Error(typeof data.error === 'string' ? data.error : 'API returned an error');
-      }
-      
-      if (!data.data) {
-        throw new Error('No data returned from API');
+      if (!data.data || !data.data.months) {
+        throw new Error('No months data returned from API');
       }
 
-      return data.data;
+      return data.data.months;
     } catch (error) {
       throw new Error(`Failed to search months: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }

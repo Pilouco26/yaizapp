@@ -50,8 +50,8 @@ export interface User {
   name: string;
   goalValue?: number | null;
   bankId?: number;
-  type?: string;
   familyId?: number;
+  type?: string;
   createdAt: string;
   updatedAt: string;
   isActive: boolean;
@@ -70,6 +70,7 @@ export interface UpdateUserRequest {
   name?: string;
   isActive?: boolean;
   bankId?: number;
+  familyId?: number;
 }
 
 export interface UserSearchParams {
@@ -271,5 +272,14 @@ export interface NotificationsResponse {
   success: boolean;
   message: string;
   notifications: Notification[];
+}
+
+// Month API Response Types
+export interface MonthResponse {
+  success: boolean;
+  message: string;
+  data: {
+    months: Month[];
+  };
 }
 

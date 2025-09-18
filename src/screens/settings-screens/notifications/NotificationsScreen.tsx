@@ -2,16 +2,73 @@ import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity, Alert, RefreshControl, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '../../contexts/ThemeContext';
-import { ThemedView, ThemedText, ThemedTouchableOpacity } from '../../components/ThemeWrapper';
-import { NotificationsService } from '../../services';
-import { Notification } from '../../services/types';
+import { useTheme } from '../../../contexts/ThemeContext';
+import { ThemedView, ThemedText, ThemedTouchableOpacity } from '../../../components/ThemeWrapper';
+import { NotificationsService, UsersService } from '../../../services';
+import { Notification } from '../../../services/types';
 
 const NotificationsScreen: React.FC = () => {
   const { colors } = useTheme();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Handle tap on a notification card
+  const handleNotificationPress = (notification: Notification) => {
+    if (notification.type === 'FRIEND') {
+      handleFriendNotification(notification);
+    } else if (!notification.isRead) {
+      handleMarkAsRead(notification.id);
+    }
+  };
+
+  // Process a FRIEND type notification
+  const handleFriendNotification = (notification: Notification) => {
+    const firstWord = notification.title.split(' ')[0];
+
+    Alert.alert(
+      'Solicitud de familia',
+      `¿Quieres añadir a ${firstWord}?`,
+      [
+        {
+          text: 'Sí',
+          onPress: async () => {
+            try {
+              // Update user 51 with the familyId from the notification message
+              const familyId = Number(notification.message);
+              await UsersService.updateUser(51, { familyId });
+
+              // Remove the notification after successful update
+              await NotificationsService.deleteNotification(notification.id, '');
+
+              // Update local state by filtering out the deleted notification
+              setNotifications(prev => prev.filter(n => n.id !== notification.id));
+
+              Alert.alert('Éxito', 'Miembro añadido a la familia');
+            } catch (error) {
+              console.error('Error processing FRIEND notification:', error);
+              const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+              Alert.alert('Error', `No se pudo procesar la solicitud: ${errorMessage}`);
+            }
+          },
+        },
+        {
+          text: 'No',
+          style: 'cancel',
+          onPress: async () => {
+            try {
+              // Delete the notification if user declines
+              await NotificationsService.deleteNotification(notification.id, '');
+              setNotifications(prev => prev.filter(n => n.id !== notification.id));
+            } catch (error) {
+              console.error('Error deleting notification:', error);
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
 
   const fetchNotifications = async () => {
     try {
@@ -205,7 +262,7 @@ const NotificationsScreen: React.FC = () => {
                     key={notification.id}
                     className="flex-row items-start p-4 rounded-xl mb-3"
                     variant="surface"
-                    onPress={() => !notification.isRead && handleMarkAsRead(notification.id)}
+                    onPress={() => handleNotificationPress(notification)}
                     activeOpacity={1}
                     style={{
                       minHeight: 80,

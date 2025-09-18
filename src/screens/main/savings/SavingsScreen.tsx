@@ -6,12 +6,12 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import LinearChart, { ChartDataPoint } from '../../components/LinearChart';
-import { ThemedView, ThemedText, ThemedTouchableOpacity, ThemedCard } from '../../components/ThemeWrapper';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useMonthsData } from '../../hooks/useMonthsData';
-import { useObjective } from '../../hooks/useObjective';
-import { useBillsContext } from '../../contexts/BillsContext';
+import LinearChart, { ChartDataPoint } from '../../../components/LinearChart';
+import { ThemedView, ThemedText, ThemedTouchableOpacity, ThemedCard } from '../../../components/ThemeWrapper';
+import { useTheme } from '../../../contexts/ThemeContext';
+import { useMonthsData } from '../../../hooks/useMonthsData';
+import { useObjective } from '../../../hooks/useObjective';
+import { useBillsContext } from '../../../contexts/BillsContext';
 import SavingsContent from './SavingsContent';
 
 // Types -----------------------------------------------------------------------
