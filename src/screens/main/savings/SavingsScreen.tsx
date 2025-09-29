@@ -65,8 +65,8 @@ const SavingsScreen: React.FC = () => {
   const primaryColor = theme === 'light' ? PRIMARY_COLOR_LIGHT : PRIMARY_COLOR_DARK;
   const secondaryColor = theme === 'light' ? SECONDARY_COLOR_LIGHT : SECONDARY_COLOR_DARK;
 
-  // Calculate savings - use totalBillsAmount as the total actual value
-  const totalSavings = totalBillsAmount;
+  // Calculate savings - sum of all monthlyExpenses from all months (same as BillsScreen total)
+  const totalSavings = months.reduce((sum, month) => sum + month.monthlyExpenses, 0);
   
   // Use the last data point from chart data for "Este Mes" calculation
   const lastMonthDataPoint = soloChartData.length > 0 ? soloChartData[soloChartData.length - 1] : null;
@@ -88,7 +88,8 @@ const SavingsScreen: React.FC = () => {
 
   
   // Calculate sum of last 6 chart data points for trend display
-  const last6MonthsSum = soloChartData.reduce((sum, dataPoint) => sum + dataPoint.value, 0);
+  const currentChartData = activeTab === 'solo' ? soloChartData : familiaChartData;
+  const last6MonthsSum = currentChartData.reduce((sum, dataPoint) => sum + dataPoint.value, 0);
 
   // Calculate accumulated savings data for solo mode
   const calculateAccumulatedSavings = (): ChartDataPoint[] => {

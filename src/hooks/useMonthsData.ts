@@ -85,7 +85,7 @@ export const useMonthsData = (): MonthsData => {
   }, [isAuthenticated, user]);
 
   // Calculate totals from monthlyExpenses and transactions
-  const totalExpenses = months.reduce((sum, month) => sum + Math.abs(month.monthlyExpenses), 0);
+  const totalExpenses = months.reduce((sum, month) => sum + month.monthlyExpenses, 0);
   
   // Calculate total income from transactions
   const totalIncome = months.reduce((sum, month) => {
@@ -107,7 +107,7 @@ export const useMonthsData = (): MonthsData => {
     month => month.year === currentYear && month.month === currentMonth
   );
   
-  const currentMonthExpenses = currentMonthData ? Math.abs(currentMonthData.monthlyExpenses) : 0;
+  const currentMonthExpenses = currentMonthData ? currentMonthData.monthlyExpenses : 0;
   
   // Calculate current month income from transactions
   const currentMonthIncome = currentMonthData && currentMonthData.transactions 
@@ -127,7 +127,7 @@ export const useMonthsData = (): MonthsData => {
     month => month.year === previousYear && month.month === previousMonth
   );
   
-  const previousMonthExpenses = previousMonthData ? Math.abs(previousMonthData.monthlyExpenses) : 0;
+  const previousMonthExpenses = previousMonthData ? previousMonthData.monthlyExpenses : 0;
   const previousMonthIncome = previousMonthData && previousMonthData.transactions 
     ? previousMonthData.transactions
         .filter(tx => tx.type === 'INCOME')

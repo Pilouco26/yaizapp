@@ -97,7 +97,7 @@ export const useFamilyData = (): FamilyData => {
       allFamilyMonths.forEach(month => {
         const key = `${month.year}-${month.month}`;
         const currentExpenses = monthMap.get(key) || 0;
-        monthMap.set(key, currentExpenses + Math.abs(month.monthlyExpenses));
+        monthMap.set(key, currentExpenses + month.monthlyExpenses);
       });
 
       // Convert to array and sort by year and month

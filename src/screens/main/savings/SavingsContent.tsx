@@ -117,7 +117,7 @@ const SavingsContent: React.FC<SavingsContentProps> = ({
                 styles.trendText, 
                 { color: primaryColor }
               ]}>
-                {isFamilia ? '+18.2%' : (last6MonthsSum >= 0 ? '+' : '') + formatEuros(last6MonthsSum)}
+                {(last6MonthsSum >= 0 ? '+' : '') + formatEuros(last6MonthsSum)}
               </ThemedText>
             </View>
           </ThemedView>
@@ -129,15 +129,15 @@ const SavingsContent: React.FC<SavingsContentProps> = ({
             </ThemedText>
             <View style={styles.trendContainer}>
               <Ionicons 
-                name={isFamilia ? "trending-up" : (hasValidPercentageValue && displayPercentage >= 0 ? "trending-up" : hasValidPercentageValue ? "trending-down" : "remove")} 
+                name={hasValidPercentageValue && displayPercentage >= 0 ? "trending-up" : hasValidPercentageValue ? "trending-down" : "remove"} 
                 size={16} 
-                color={isFamilia ? primaryColor : (hasValidPercentageValue ? primaryColor : colors.textSecondary)} 
+                color={hasValidPercentageValue ? primaryColor : colors.textSecondary} 
               />
               <ThemedText style={[
                 styles.trendText, 
-                { color: isFamilia ? primaryColor : (hasValidPercentageValue ? primaryColor : colors.textSecondary) }
+                { color: hasValidPercentageValue ? primaryColor : colors.textSecondary }
               ]}>
-                {isFamilia ? '+20.0%' : (hasValidPercentageValue ? `${displayPercentage >= 0 ? '+' : ''}${displayPercentage.toFixed(1)}%` : '--')}
+                {hasValidPercentageValue ? `${displayPercentage >= 0 ? '+' : ''}${displayPercentage.toFixed(1)}%` : '--'}
               </ThemedText>
             </View>
           </ThemedView>
