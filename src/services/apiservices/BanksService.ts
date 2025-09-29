@@ -61,6 +61,47 @@ export class BanksService {
       throw new Error(`Failed to fetch banks: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
+
+  /**
+   * Search bank by id via /api/banks/searchBy?id=...
+   */
+  static async searchBankById(bankId: number): Promise<APIBank | null> {
+    try {
+      const searchUrl = getFullApiUrlWithAuth(`${API_CONFIG.ENDPOINTS.BANKS_SEARCH}?id=${bankId}`);
+
+      const response = await fetch(searchUrl, {
+        method: 'GET',
+        headers: getDefaultHeaders(),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
+      }
+
+      // The API may return different shapes; normalize to APIBank[] or APIBank
+      const raw = await response.json();
+
+      // Try common envelopes
+      const data = (raw?.data?.banks ?? raw?.data ?? raw);
+
+      let banks: APIBank[] = [];
+      if (Array.isArray(data)) {
+        banks = data as APIBank[];
+      } else if (data?.banks && Array.isArray(data.banks)) {
+        banks = data.banks as APIBank[];
+      } else if (data?.bank) {
+        banks = [data.bank as APIBank];
+      } else if (data && typeof data === 'object') {
+        banks = [data as APIBank];
+      }
+
+      const bank = banks.find(b => Number(b.id) === Number(bankId)) ?? banks[0] ?? null;
+      return bank ?? null;
+    } catch (error) {
+      throw new Error(`Failed to search bank by id: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
 }
 
 // Export individual function for backward compatibility

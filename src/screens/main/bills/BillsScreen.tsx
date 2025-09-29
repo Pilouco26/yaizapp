@@ -14,7 +14,8 @@ import { Bill } from '../../../utils/types';
 import { formatDate } from '../../../utils/helpers'; 
 import { ThemedView, ThemedText, ThemedTouchableOpacity, ThemedScrollView, ThemedCard } from '../../../components/ThemeWrapper';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { user_id } from '../../../config/constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const BillsScreen: React.FC = () => {
   const [showImportModal, setShowImportModal] = useState(false);
@@ -25,6 +26,19 @@ const BillsScreen: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
   const { colors } = useTheme();
+  const { user } = useAuth();
+  const resolveAuthenticatedUserId = async (): Promise<number> => {
+    try {
+      const raw = await AsyncStorage.getItem('api_user');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.id) return Number(parsed.id);
+      }
+    } catch {}
+    if (user?.id) return Number(user.id as any);
+    throw new Error('No se pudo determinar el usuario autenticado');
+  };
+
 
   const {
     bills,
@@ -86,7 +100,8 @@ const BillsScreen: React.FC = () => {
       setIsLoadingTransactions(true);
       
       const { getFullApiUrlWithAuth, getDefaultHeaders, API_CONFIG } = await import('../../../utils/config');
-      const txUrl = getFullApiUrlWithAuth(`${API_CONFIG.ENDPOINTS.TRANSACTIONS.SEARCH}?userId=${user_id}`);
+      const resolvedUserId = await resolveAuthenticatedUserId();
+      const txUrl = getFullApiUrlWithAuth(`${API_CONFIG.ENDPOINTS.TRANSACTIONS.SEARCH}?userId=${resolvedUserId}`);
       
       
       const response = await fetch(txUrl, {

@@ -7,6 +7,7 @@ import { ThemedView, ThemedText, ThemedTouchableOpacity } from '../../../compone
 import { BanksService, UsersService } from '../../../services';
 import { APIBank } from '../../../services/apiservices/BanksService';
 import { useAuth } from '../../../contexts/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BankScreen: React.FC = () => {
   const { colors } = useTheme();
@@ -49,9 +50,22 @@ const BankScreen: React.FC = () => {
 
     setIsUpdating(true);
     try {
-      // Use hardcoded user ID 1 as expected by the API
-      const userId = 1;
-      await UsersService.updateUser(userId, { bankId: parseInt(selectedBank) });
+      // Resolve current user id from cache or auth context
+      let resolvedUserId: number | null = null;
+      try {
+        const raw = await AsyncStorage.getItem('api_user');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.id) resolvedUserId = Number(parsed.id);
+        }
+      } catch {}
+      if (!resolvedUserId && user?.id) {
+        resolvedUserId = Number(user.id as any);
+      }
+      if (!resolvedUserId || Number.isNaN(resolvedUserId)) {
+        throw new Error('No se pudo determinar el usuario autenticado');
+      }
+      await UsersService.updateUser(resolvedUserId, { bankId: parseInt(selectedBank) });
       Alert.alert('Éxito', 'Banco actualizado correctamente', [
         {
           text: 'OK',

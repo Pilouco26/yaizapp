@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import HomeScreen from '../screens/home/HomeScreen';
+import HomeScreen from '../screens/main/home/HomeScreen';
 import SavingsScreen from '../screens/main/savings/SavingsScreen';
 import BillsScreen from '../screens/main/bills/BillsScreen';
 import ProfileScreen from '../screens/main/profile/ProfileScreen';

@@ -6,8 +6,8 @@ import { HealthService } from '../services/apiservices/HealthService';
 interface AuthContextType {
   isAuthenticated: boolean;
   user: OAuthUser | null;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
+  signup: (username: string, name: string, email: string, password: string) => Promise<void>;
   loginWithMeta: () => Promise<void>;
   loginWithBiometric: () => Promise<void>;
   logout: () => Promise<void>;
@@ -44,7 +44,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       ('🏥 Performing health check on app initialization...');
       try {
         const healthData = await HealthService.getHealth();
-        ('✅ Health check successful:', {
+        console.log('✅ Health check successful:', {
           status: healthData.status,
           version: healthData.version,
           uptime: healthData.uptime,
@@ -70,31 +70,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (username: string, password: string) => {
     try {
       setIsLoading(true);
-      // Simulate API call delay for login
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For demo purposes, accept any valid email/password combination
-      if (!email || !password) {
-        throw new Error('Email y contraseña son requeridos');
+      if (!username || !password) {
+        throw new Error('Usuario y contraseña son requeridos');
       }
-      
-      // Create a mock user for login
-      const mockUser: OAuthUser = {
-        id: 'login-user-' + Date.now(),
-        email: email,
-        name: email.split('@')[0], // Use email prefix as name
-        provider: 'direct' as const,
-      };
-      
-      // Store authentication status and user data
+
+      const { AuthService } = await import('../services/apiservices/AuthService');
+      const res = await AuthService.login({ username, password });
+      console.log('Login response:', res);
+
+      if (!res?.success || (!res?.token && !res?.user)) {
+        throw new Error('Credenciales inválidas');
+      }
+
+      const loggedUser: OAuthUser = {
+        id: String(res.user?.id ?? username),
+        email: String(res.user?.email ?? ''),
+        name: String(res.user?.name ?? username),
+        provider: 'direct',
+      } as OAuthUser;
+
       await AsyncStorage.setItem('auth_status', 'authenticated');
       await AsyncStorage.setItem('auth_provider', 'direct');
-      await AsyncStorage.setItem('user_data', JSON.stringify(mockUser));
-      
-      setUser(mockUser);
+      await AsyncStorage.setItem('user_data', JSON.stringify(loggedUser));
+      // Store full API user for richer profile data (e.g., bankId, familyId)
+      if (res.user) {
+        await AsyncStorage.setItem('api_user', JSON.stringify(res.user));
+      }
+      if (res.token) {
+        await AsyncStorage.setItem('auth_token', res.token);
+      }
+
+      setUser(loggedUser);
       setIsAuthenticated(true);
     } catch (error) {
       console.error('Login error:', error);
@@ -104,12 +113,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const signup = async (name: string, email: string, password: string) => {
+  const signup = async (username: string, name: string, email: string, password: string) => {
     try {
       setIsLoading(true);
-      // Simulate API call delay for signup
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
       // Validate input
       if (!name || !email || !password) {
         throw new Error('Todos los campos son requeridos');
@@ -119,20 +125,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error('La contraseña debe tener al menos 8 caracteres');
       }
       
-      // Create a mock user for signup
-      const mockUser: OAuthUser = {
+      // Call backend register
+      const { AuthService } = await import('../services/apiservices/AuthService');
+      const response = await AuthService.register({ nom: name, username, email, password });
+
+      // Persist auth status (token optional currently)
+      const newUser: OAuthUser = {
         id: 'signup-user-' + Date.now(),
-        email: email,
-        name: name,
+        email,
+        name,
         provider: 'direct' as const,
       };
-      
-      // Store authentication status and user data
+
       await AsyncStorage.setItem('auth_status', 'authenticated');
       await AsyncStorage.setItem('auth_provider', 'direct');
-      await AsyncStorage.setItem('user_data', JSON.stringify(mockUser));
-      
-      setUser(mockUser);
+      await AsyncStorage.setItem('user_data', JSON.stringify(newUser));
+      if (response.token) {
+        await AsyncStorage.setItem('auth_token', response.token);
+      }
+
+      setUser(newUser);
       setIsAuthenticated(true);
     } catch (error) {
       console.error('Signup error:', error);
@@ -207,7 +219,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await AsyncStorage.multiRemove([
         'auth_status',
         'auth_provider',
-        'user_data'
+        'user_data',
+        'api_user'
       ]);
       
       setUser(null);

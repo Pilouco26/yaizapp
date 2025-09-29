@@ -10,6 +10,7 @@ import LinearChart, { ChartDataPoint } from '../../../components/LinearChart';
 import { ThemedView, ThemedText, ThemedTouchableOpacity, ThemedCard } from '../../../components/ThemeWrapper';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { useMonthsData } from '../../../hooks/useMonthsData';
+import { useFamilyData } from '../../../hooks/useFamilyData';
 import { useObjective } from '../../../hooks/useObjective';
 import { useBillsContext } from '../../../contexts/BillsContext';
 import SavingsContent from './SavingsContent';
@@ -25,15 +26,7 @@ const SECONDARY_COLOR_LIGHT = '#3b82f6';
 const PRIMARY_COLOR_DARK = '#38bdf8';
 const SECONDARY_COLOR_DARK = '#60a5fa';
 
-// Mock data for family savings (since we only have individual data for now)
-const familiaSavingsData: ChartDataPoint[] = [
-  { label: 'Ene', value: 2500 },
-  { label: 'Feb', value: 3200 },
-  { label: 'Mar', value: 3800 },
-  { label: 'Abr', value: 4500 },
-  { label: 'May', value: 5200 },
-  { label: 'Jun', value: 6000 },
-];
+// Family data will be fetched from the API
 
 // Component -------------------------------------------------------------------
 
@@ -49,10 +42,21 @@ const SavingsScreen: React.FC = () => {
     currentMonthIncome, 
     currentMonthSavings,
     monthlySavingsPercentage,
-    isLoading, 
-    error,
+    isLoading: soloIsLoading, 
+    error: soloError,
     refetch: refetchMonthsData
   } = useMonthsData();
+  
+  const {
+    chartData: familiaChartData,
+    totalSavings: familiaTotalSavings,
+    currentMonthSavings: familiaCurrentMonthSavings,
+    monthlyPercentage: familiaMonthlyPercentage,
+    isLoading: familiaIsLoading,
+    error: familiaError,
+    refetch: refetchFamilyData
+  } = useFamilyData();
+  
   const { objectiveAmount } = useObjective();
   const { totalBillsAmount, refreshId } = useBillsContext();
   const lastRefreshIdRef = useRef<string>('');
@@ -113,14 +117,15 @@ const SavingsScreen: React.FC = () => {
   // Calculate accumulated savings data - this will automatically refresh when months data changes
   const accumulatedSavingsData = calculateAccumulatedSavings();
 
-  // Listen for bills refresh events and trigger months data refresh
+  // Listen for bills refresh events and trigger data refresh
   useEffect(() => {
     if (refreshId && refreshId !== lastRefreshIdRef.current) {
-      // Bills data was refreshed, so refresh months data too
+      // Bills data was refreshed, so refresh both solo and family data
       lastRefreshIdRef.current = refreshId;
       refetchMonthsData();
+      refetchFamilyData();
     }
-  }, [refreshId, refetchMonthsData]);
+  }, [refreshId, refetchMonthsData, refetchFamilyData]);
 
   const handleDataPointPress = (dataPoint: ChartDataPoint) => {
     // Handle data point press if needed
@@ -197,22 +202,22 @@ const SavingsScreen: React.FC = () => {
 
         {/* Tab Content -------------------------------------------------------- */}
         <SavingsContent
-          isLoading={isLoading}
-          error={error}
-          chartData={activeTab === 'solo' ? soloChartData : familiaSavingsData}
-          totalSavings={totalSavings}
-          displayCurrentMonthSavings={displayCurrentMonthSavings}
-          displayMonthlySavingsPercentage={displayMonthlySavingsPercentage}
-          hasValidPercentage={hasValidPercentage}
+          isLoading={activeTab === 'solo' ? soloIsLoading : familiaIsLoading}
+          error={activeTab === 'solo' ? soloError : familiaError}
+          chartData={activeTab === 'solo' ? soloChartData : familiaChartData}
+          totalSavings={activeTab === 'solo' ? totalSavings : familiaTotalSavings}
+          displayCurrentMonthSavings={activeTab === 'solo' ? displayCurrentMonthSavings : familiaCurrentMonthSavings}
+          displayMonthlySavingsPercentage={activeTab === 'solo' ? displayMonthlySavingsPercentage : familiaMonthlyPercentage}
+          hasValidPercentage={activeTab === 'solo' ? hasValidPercentage : true}
           last6MonthsSum={last6MonthsSum}
           objectiveAmount={objectiveAmount}
           primaryColor={activeTab === 'solo' ? primaryColor : secondaryColor}
           onDataPointPress={handleDataPointPress}
           mode={activeTab}
           familiaData={activeTab === 'familia' ? {
-            totalSavings: 6000,
-            currentMonthSavings: 800,
-            monthlyPercentage: 20.0
+            totalSavings: familiaTotalSavings,
+            currentMonthSavings: familiaCurrentMonthSavings,
+            monthlyPercentage: familiaMonthlyPercentage
           } : undefined}
           accumulatedSavingsData={activeTab === 'solo' ? accumulatedSavingsData : undefined}
         />

@@ -7,6 +7,79 @@ import { User, CreateUserRequest, UpdateUserRequest, UserSearchParams, ApiRespon
  */
 export class UsersService {
   /**
+   * Check username availability
+   * GET /api/users/searchAvailability?username=...
+   */
+  static async searchAvailability(username: string, authToken?: string): Promise<{ available: boolean }> {
+    try {
+      const apiUrl = getFullApiUrlWithAuth(`${API_CONFIG.ENDPOINTS.USERS.SEARCH_AVAILABILITY}?username=${encodeURIComponent(username)}`);
+
+      const headers = getDefaultHeaders();
+
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
+      }
+
+      const raw = await response.json();
+      // Normalize various possible API shapes
+      // Expected preferred: { success: true, data: { available: boolean } }
+      const available = !!(
+        (raw?.data && typeof raw.data.available === 'boolean' && raw.data.available === true) ||
+        (typeof raw?.available === 'boolean' && raw.available === true)
+      );
+
+      return { available };
+    } catch (error) {
+      throw new Error(`Failed to check username availability: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+  
+  /**
+   * Check email availability
+   * GET /api/users/searchAvailability?email=...
+   */
+  static async searchAvailabilityByEmail(email: string, authToken?: string): Promise<{ available: boolean }> {
+    try {
+      const apiUrl = getFullApiUrlWithAuth(`${API_CONFIG.ENDPOINTS.USERS.SEARCH_AVAILABILITY}?email=${encodeURIComponent(email)}`);
+
+      const headers = getDefaultHeaders();
+
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
+      }
+
+      const raw = await response.json();
+      const available = !!(
+        (raw?.data && typeof raw.data.available === 'boolean' && raw.data.available === true) ||
+        (typeof raw?.available === 'boolean' && raw.available === true)
+      );
+
+      return { available };
+    } catch (error) {
+      throw new Error(`Failed to check email availability: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+  /**
    * Get all users (requires auth)
    * GET /api/users
    */

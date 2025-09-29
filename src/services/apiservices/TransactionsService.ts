@@ -287,5 +287,50 @@ export class TransactionsService {
       throw error;
     }
   }
+
+  /**
+   * Upload transactions PDF for parsing on the server
+   * POST /api/transactions/pdf
+   * Body: multipart/form-data with fields { userId, file }
+   */
+  static async uploadTransactionsPdf(params: { userId: number; fileUri: string; fileName?: string; mimeType?: string }): Promise<ApiResponse> {
+    try {
+      const apiUrl = getFullApiUrlWithAuth(API_CONFIG.ENDPOINTS.TRANSACTIONS.PDF);
+      console.log('apiUrl', apiUrl);
+
+      const form = new FormData();
+      form.append('userId', String(params.userId));
+      // React Native FormData file descriptor
+      form.append('file', {
+        uri: params.fileUri,
+        name: params.fileName || 'transactions.pdf',
+        type: params.mimeType || 'application/pdf',
+      } as any);
+
+      // Build headers: use default headers but override content-type to let RN set boundary
+      const baseHeaders = getDefaultHeaders();
+      // Remove JSON content-type to allow multipart boundary
+      delete (baseHeaders as any)['Content-Type'];
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: baseHeaders,
+        body: form,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
+      }
+
+      const data: ApiResponse = await response.json();
+      if (data.success === false) {
+        throw new Error(data.message || 'Failed to upload PDF');
+      }
+      return data;
+    } catch (error) {
+      throw new Error(`Failed to upload transactions PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
 }
 

@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { Bill } from '../utils/types';
 import { TransactionsService } from '../services';
-import { user_id } from '../config/constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from './AuthContext';
 import { API_CONFIG, getFullApiUrlWithAuth, getDefaultHeaders } from '../utils/config';
 
 interface BillsContextType {
@@ -29,6 +30,7 @@ interface BillsProviderProps {
 }
 
 export const BillsProvider: React.FC<BillsProviderProps> = ({ children }) => {
+  const { user } = useAuth();
   const [bills, setBills] = useState<Bill[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,8 +49,20 @@ export const BillsProvider: React.FC<BillsProviderProps> = ({ children }) => {
       
       // Backend transactions for the current user (mapped to Bill shape)
       let backendBills: Bill[] = [];
+      const resolveAuthenticatedUserId = async (): Promise<number> => {
+        try {
+          const raw = await AsyncStorage.getItem('api_user');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed?.id) return Number(parsed.id);
+          }
+        } catch {}
+        if (user?.id) return Number(user.id as any);
+        throw new Error('No se pudo determinar el usuario autenticado');
+      };
       try {
-        const txUrl = getFullApiUrlWithAuth(`${API_CONFIG.ENDPOINTS.TRANSACTIONS.SEARCH}?userId=${user_id}`);
+        const resolvedUserId = await resolveAuthenticatedUserId();
+        const txUrl = getFullApiUrlWithAuth(`${API_CONFIG.ENDPOINTS.TRANSACTIONS.SEARCH}?userId=${resolvedUserId}`);
         const txResponse = await fetch(txUrl, { method: 'GET', headers: getDefaultHeaders() });
         if (txResponse.ok) {
           const txJson = await txResponse.json();

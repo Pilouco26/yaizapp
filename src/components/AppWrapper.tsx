@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import LoginScreen from '../screens/login/LoginScreen';
+import AuthNavigator from '../navigation/AuthNavigator';
 import StackNavigator from '../navigation/StackNavigator';
 
 const AppWrapper: React.FC = () => {
@@ -23,13 +24,7 @@ const AppWrapper: React.FC = () => {
     return (
       <>
         <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
-        <LoginScreen 
-          onLogin={login} 
-          onSignup={signup}
-          onMetaLogin={loginWithMeta}
-          onBiometricLogin={loginWithBiometric}
-          isLoading={isLoading} 
-        />
+        <AuthNavigator />
       </>
     );
   }

@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity, Alert, TextInput, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useObjective } from '../../hooks/useObjective';
-import { formatCurrency } from '../../utils/helpers';
-import { ThemedView, ThemedText, ThemedTouchableOpacity, ThemedScrollView, ThemedCard } from '../../components/ThemeWrapper';
-import { EnhancedInput } from '../../components/EnhancedInput';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useObjective } from '../../../hooks/useObjective';
+import { formatCurrency } from '../../../utils/helpers';
+import { ThemedView, ThemedText, ThemedTouchableOpacity, ThemedScrollView, ThemedCard } from '../../../components/ThemeWrapper';
+import { EnhancedInput } from '../../../components/EnhancedInput';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 const HomeScreen: React.FC = () => {
   const [objectiveInput, setObjectiveInput] = useState<string>('');

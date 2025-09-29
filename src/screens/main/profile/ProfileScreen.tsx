@@ -8,7 +8,6 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import { useAuth } from '../../../contexts/AuthContext';
 import { ThemedView, ThemedText, ThemedTouchableOpacity } from '../../../components/ThemeWrapper';
 import { UsersService } from '../../../services';
-import { user_id } from '../../../config/constants';
 import { User as ApiUser, UserBodyResponse } from '../../../services/types';
 
 const ProfileScreen: React.FC = () => {
@@ -35,30 +34,22 @@ const ProfileScreen: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Fetch user data from API (id = 1)
-    const fetchUserData = async () => {
+    // Load cached api_user set on login to avoid unnecessary lookups
+    const loadCachedApiUser = async () => {
       try {
-        const users = await UsersService.searchUsers({ id: user_id });
-        
-        // The service should return User[] directly
-        if (users && users.length > 0) {
-          // Check if the first user is actually a user object or a response object
-          const firstUser = users[0] as ApiUser | UserBodyResponse;
-          if ('user' in firstUser) {
-            // This is a UserBodyResponse object with nested user data
-            setApiUser(firstUser.user);
-          } else {
-            // This is a direct User object
-            setApiUser(firstUser);
-          }
-        } else {
+        const raw = await AsyncStorage.getItem('api_user');
+        if (raw) {
+          const parsed: ApiUser = JSON.parse(raw);
+          setApiUser(parsed);
+          return;
         }
+        // Fallback: nothing cached; keep UI using basic auth `user`
       } catch (error) {
-        console.error('❌ [ProfileScreen] Error fetching user data:', error);
+        console.error('❌ [ProfileScreen] Error loading cached api_user:', error);
       }
     };
 
-    fetchUserData();
+    loadCachedApiUser();
   }, []);
 
   // Debug logging for user data
@@ -146,9 +137,7 @@ const ProfileScreen: React.FC = () => {
               <ThemedText className="text-sm mt-1" variant="tertiary">
                 @{apiUser?.username || 'username'}
               </ThemedText>
-              <ThemedText className="text-sm mt-1" variant="tertiary">
-                Conectado con {getProviderName()}
-              </ThemedText>
+
           </View>
           
           <View className="w-full max-w-sm">

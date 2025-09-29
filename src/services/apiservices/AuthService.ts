@@ -1,11 +1,76 @@
 import { API_CONFIG, getFullApiUrlWithAuth, getDefaultHeaders } from '../../utils/config';
-import { DevTokenRequest, DevTokenResponse, ApiResponse } from '../types';
+import { DevTokenRequest, DevTokenResponse } from '../types';
+import { ApiResponse, LoginResponseData } from '../../utils/types';
 
 /**
  * Authentication Service
  * Handles authentication-related API calls
  */
 export class AuthService {
+  /**
+   * Login with username and password
+   * POST /api/auth/login
+   */
+  static async login(body: { username: string; password: string }): Promise<{ token?: string; user?: any; success?: boolean }>
+  {
+    try {
+      const apiUrl = getFullApiUrlWithAuth(API_CONFIG.ENDPOINTS.AUTH.LOGIN);
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: getDefaultHeaders(),
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ [AuthService] Login error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
+      }
+
+      const data: ApiResponse<LoginResponseData> = await response.json();
+      if (data.error) {
+        throw new Error(typeof data.error === 'string' ? data.error : 'API returned an error');
+      }
+
+      return { token: data.data?.token, user: data.data?.auth?.user, success: data.data?.success };
+    } catch (error) {
+      console.error('❌ [AuthService] login error:', error);
+      throw new Error(`Failed to login: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+  /**
+   * Register new user
+   * POST /api/auth/register
+   */
+  static async register(body: { nom: string; username: string; email: string; password: string }): Promise<{ token?: string; success?: boolean }> {
+    try {
+      const apiUrl = getFullApiUrlWithAuth(API_CONFIG.ENDPOINTS.AUTH.REGISTER);
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: getDefaultHeaders(),
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ [AuthService] Register error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
+      }
+
+      const data: ApiResponse<{ token?: string }> = await response.json();
+
+      if (data.error) {
+        throw new Error(typeof data.error === 'string' ? data.error : 'API returned an error');
+      }
+
+      return { token: data.data?.token, success: data.success };
+    } catch (error) {
+      console.error('❌ [AuthService] register error:', error);
+      throw new Error(`Failed to register: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
   /**
    * Generate development JWT token
    * POST /api/auth/dev-token

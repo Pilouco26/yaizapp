@@ -20,6 +20,7 @@ const LoginScreenDemo: React.FC = () => {
       }
     } catch (error) {
       Alert.alert('Error', 'Error al iniciar sesión');
+      console.log(error);
     } finally {
       setIsLoading(false);
     }

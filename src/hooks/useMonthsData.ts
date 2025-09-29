@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Month } from '../services/types';
 import { MonthsService } from '../services/apiservices/MonthsService';
 import { useAuth } from '../contexts/AuthContext';
-import { user_id } from '../config/constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface ChartDataPoint {
   label: string;
@@ -46,9 +46,22 @@ export const useMonthsData = (): MonthsData => {
       setIsLoading(true);
       setError(null);
 
-      // Use the hardcoded user_id from constants for now
-      // In a real app, you'd use the authenticated user's ID
-      const monthsData = await MonthsService.getMonthsByUserId(user_id, 'mock-token');
+      // Resolve authenticated user id from cache/context
+      let resolvedUserId: number | null = null;
+      try {
+        const raw = await AsyncStorage.getItem('api_user');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.id) resolvedUserId = Number(parsed.id);
+        }
+      } catch {}
+      if (!resolvedUserId && user?.id) {
+        resolvedUserId = Number(user.id as any);
+      }
+      if (!resolvedUserId) {
+        throw new Error('No se pudo determinar el usuario autenticado');
+      }
+      const monthsData = await MonthsService.getMonthsByUserId(resolvedUserId, 'mock-token');
       
       // Sort months by year and month
       const sortedMonths = monthsData.sort((a, b) => {

@@ -5,6 +5,7 @@ import TabNavigator from './TabNavigator';
 import ConfigurationScreen from '../screens/settings-screens/configuration/ConfigurationScreen';
 import BankScreen from '../screens/settings-screens/bank/BankScreen';
 import FamilyScreen from '../screens/settings-screens/family/FamilyScreen';
+import CreateFamilyScreen from '../screens/settings-screens/family/CreateFamilyScreen';
 import NotificationsScreen from '../screens/settings-screens/notifications/NotificationsScreen';
 
 export type RootStackParamList = {
@@ -12,6 +13,7 @@ export type RootStackParamList = {
   Configuration: undefined;
   Bank: undefined;
   Family: undefined;
+  CreateFamily: undefined;
   Notifications: undefined;
 };
 
@@ -63,6 +65,15 @@ const StackNavigator: React.FC = () => {
           title: 'Familia',
           headerShown: true,
           headerBackTitle: 'Configuración',
+        }}
+      />
+      <Stack.Screen 
+        name="CreateFamily" 
+        component={CreateFamilyScreen}
+        options={{ 
+          title: 'Crear Familia',
+          headerShown: true,
+          headerBackTitle: 'Familia',
         }}
       />
       <Stack.Screen 

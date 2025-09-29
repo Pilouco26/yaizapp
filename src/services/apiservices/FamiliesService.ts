@@ -31,7 +31,10 @@ export class FamiliesService {
         throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
       }
 
-      const data: ApiResponse<Family[]> = await response.json();
+      const responseData = await response.json();
+      
+      // Handle nested response structure: { data: { success: true, data: [...] } }
+      const data = responseData.data;
       
       if (!data.success) {
         throw new Error(data.message || 'API request failed');
@@ -141,12 +144,12 @@ export class FamiliesService {
     try {
       const apiUrl = getFullApiUrlWithAuth(API_CONFIG.ENDPOINTS.FAMILIES.BASE);
       
+      const headers = getDefaultHeaders();
+      headers['Authorization'] = `Bearer ${authToken}`;
+
       const response = await fetch(apiUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
-        },
+        headers,
         body: JSON.stringify(familyData),
       });
 
@@ -155,8 +158,11 @@ export class FamiliesService {
         throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
       }
 
-      const data: ApiResponse<Family> = await response.json();
+      const responseData = await response.json();
       
+      // Handle nested response structure: { data: { success: true, family: {...} } }
+      const data = responseData.data;
+      console.log('data', data);
       if (!data.success) {
         throw new Error(data.message || 'API request failed');
       }
@@ -165,11 +171,11 @@ export class FamiliesService {
         throw new Error(typeof data.error === 'string' ? data.error : 'API returned an error');
       }
       
-      if (!data.data) {
-        throw new Error('No data returned from API');
+      if (!data.family) {
+        throw new Error('No family data returned from API');
       }
-
-      return data.data;
+      
+      return data.family;
     } catch (error) {
       console.error('FamiliesService.createFamily error:', error);
       throw new Error(`Failed to create family: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -184,12 +190,12 @@ export class FamiliesService {
     try {
       const apiUrl = getFullApiUrlWithAuth(`${API_CONFIG.ENDPOINTS.FAMILIES.BASE}/${familyId}`);
       
+      const headers = getDefaultHeaders();
+      headers['Authorization'] = `Bearer ${authToken}`;
+
       const response = await fetch(apiUrl, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
-        },
+        headers,
         body: JSON.stringify(familyData),
       });
 
@@ -198,7 +204,10 @@ export class FamiliesService {
         throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
       }
 
-      const data: ApiResponse<Family> = await response.json();
+      const responseData = await response.json();
+      
+      // Handle nested response structure: { data: { success: true, data: {...} } }
+      const data = responseData.data;
       
       if (!data.success) {
         throw new Error(data.message || 'API request failed');
@@ -227,12 +236,12 @@ export class FamiliesService {
     try {
       const apiUrl = getFullApiUrlWithAuth(`${API_CONFIG.ENDPOINTS.FAMILIES.BASE}/${familyId}`);
       
+      const headers = getDefaultHeaders();
+      headers['Authorization'] = `Bearer ${authToken}`;
+
       const response = await fetch(apiUrl, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
-        },
+        headers,
       });
 
       if (!response.ok) {
@@ -240,7 +249,10 @@ export class FamiliesService {
         throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
       }
 
-      const data: ApiResponse = await response.json();
+      const responseData = await response.json();
+      
+      // Handle nested response structure: { data: { success: true, ... } }
+      const data = responseData.data;
       
       if (!data.success) {
         throw new Error(data.message || 'API request failed');

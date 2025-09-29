@@ -28,6 +28,8 @@ export const API_CONFIG = {
     // Authentication
     AUTH: {
       DEV_TOKEN: '/api/auth/dev-token',
+      REGISTER: '/api/auth/register',
+      LOGIN: '/api/auth/login',
     },
     
     // Health
@@ -40,6 +42,7 @@ export const API_CONFIG = {
     USERS: {
       BASE: '/api/users',
       SEARCH: '/api/users/searchBy',
+      SEARCH_AVAILABILITY: '/api/users/searchAvailability',
     },
     
     // Families
@@ -64,6 +67,7 @@ export const API_CONFIG = {
     TRANSACTIONS: {
       BASE: '/api/transactions',
       SEARCH: '/api/transactions/searchBy',
+      PDF: '/api/transactions/pdf',
     },
     
     // Notifications
@@ -74,6 +78,7 @@ export const API_CONFIG = {
     
     // Banks
     BANKS: '/api/banks',
+    BANKS_SEARCH: '/api/banks/searchBy',
     
     // Legacy endpoints (for backward compatibility)
     BILLS: '/api/bills',

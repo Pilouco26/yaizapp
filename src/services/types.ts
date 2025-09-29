@@ -94,6 +94,7 @@ export interface Family {
   createdAt: string;
   updatedAt: string;
   members: string[]; // User IDs
+  users?: User[]; // Full user objects (when included in API response)
 }
 
 export interface CreateFamilyRequest {

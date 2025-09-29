@@ -5,10 +5,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { ThemedView, ThemedText, ThemedTouchableOpacity } from '../../../components/ThemeWrapper';
 import { NotificationsService, UsersService } from '../../../services';
+import { useAuth } from '../../../contexts/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Notification } from '../../../services/types';
 
 const NotificationsScreen: React.FC = () => {
   const { colors } = useTheme();
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -34,9 +37,24 @@ const NotificationsScreen: React.FC = () => {
           text: 'Sí',
           onPress: async () => {
             try {
-              // Update user 51 with the familyId from the notification message
+              // Resolve authenticated user id
+              let resolvedUserId: number | null = null;
+              try {
+                const raw = await AsyncStorage.getItem('api_user');
+                if (raw) {
+                  const parsed = JSON.parse(raw);
+                  if (parsed?.id) resolvedUserId = Number(parsed.id);
+                }
+              } catch {}
+              if (!resolvedUserId && user?.id) {
+                resolvedUserId = Number(user.id as any);
+              }
+              if (!resolvedUserId || Number.isNaN(resolvedUserId)) {
+                throw new Error('No se pudo determinar el usuario autenticado');
+              }
+              // Update current user with the familyId from the notification message
               const familyId = Number(notification.message);
-              await UsersService.updateUser(51, { familyId });
+              await UsersService.updateUser(resolvedUserId, { familyId });
 
               // Remove the notification after successful update
               await NotificationsService.deleteNotification(notification.id, '');
@@ -72,9 +90,22 @@ const NotificationsScreen: React.FC = () => {
 
   const fetchNotifications = async () => {
     try {
-      // Use hardcoded userId 51 as specified in the request
-      const userId = '51';
-      const notificationsData = await NotificationsService.getNotificationsByUserId(userId, '');
+      // Resolve authenticated user id (string for service signature)
+      let resolvedUserId: string | null = null;
+      try {
+        const raw = await AsyncStorage.getItem('api_user');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.id) resolvedUserId = String(parsed.id);
+        }
+      } catch {}
+      if (!resolvedUserId && user?.id) {
+        resolvedUserId = String(user.id as any);
+      }
+      if (!resolvedUserId) {
+        throw new Error('No se pudo determinar el usuario autenticado');
+      }
+      const notificationsData = await NotificationsService.getNotificationsByUserId(resolvedUserId, '');
       
       // Map API response to ensure isRead field is properly set
       const mappedNotifications = notificationsData.map(notification => ({
@@ -120,8 +151,21 @@ const NotificationsScreen: React.FC = () => {
 
   const handleMarkAllAsRead = async () => {
     try {
-      const userId = '51';
-      await NotificationsService.markAllAsRead(userId, '');
+      let resolvedUserId: string | null = null;
+      try {
+        const raw = await AsyncStorage.getItem('api_user');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.id) resolvedUserId = String(parsed.id);
+        }
+      } catch {}
+      if (!resolvedUserId && user?.id) {
+        resolvedUserId = String(user.id as any);
+      }
+      if (!resolvedUserId) {
+        throw new Error('No se pudo determinar el usuario autenticado');
+      }
+      await NotificationsService.markAllAsRead(resolvedUserId, '');
       
       // Update local state
       setNotifications(prevNotifications =>

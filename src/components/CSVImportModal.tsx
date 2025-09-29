@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -13,8 +13,13 @@ import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { JSONBillData } from '../utils/types';
 import { getFullApiUrlWithAuth, getDefaultHeaders, API_CONFIG } from '../utils/config';
-import { user_id } from '../config/constants';
 import { useTheme } from '../contexts/ThemeContext';
+import { UsersService } from '../services/apiservices/UsersService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BanksService } from '../services/apiservices/BanksService';
+import { TransactionsService } from '../services/apiservices/TransactionsService';
+import { useAuth } from '../contexts/AuthContext';
+import { User } from '../services';
 
 interface CSVImportModalProps {
   visible: boolean;
@@ -30,17 +35,32 @@ const CSVImportModal: React.FC<CSVImportModalProps> = ({
   isLoading = false,
 }) => {
   const { colors } = useTheme();
+  const { user } = useAuth();
   const [selectedFile, setSelectedFile] = useState<DocumentPicker.DocumentPickerResult | null>(null);
+  const resolveAuthenticatedUserId = async (): Promise<number> => {
+    try {
+      const raw = await AsyncStorage.getItem('api_user');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.id) return Number(parsed.id);
+      }
+    } catch {}
+    if (user?.id) return Number(user.id as any);
+    throw new Error('No se pudo determinar el usuario autenticado');
+  };
+
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [allowPdf, setAllowPdf] = useState(false);
+  const [selectedFileType, setSelectedFileType] = useState<'CSV' | 'PDF' | null>(null);
 
-  const pickDocument = async () => {
+  const pickDocument = async (acceptPdf: boolean) => {
     try {
       setError(null);
       setUploadStatus('idle');
       const result = await DocumentPicker.getDocumentAsync({
-        type: 'text/csv',
+        type: acceptPdf ? ['application/pdf'] : ['text/csv'],
         copyToCacheDirectory: true,
       });
 
@@ -50,11 +70,46 @@ const CSVImportModal: React.FC<CSVImportModalProps> = ({
 
       if (result.assets && result.assets.length > 0) {
         setSelectedFile(result);
+        setSelectedFileType(acceptPdf ? 'PDF' : 'CSV');
       }
     } catch (err) {
-      setError('Error al seleccionar el archivo CSV');
+      setError(`Error al seleccionar el archivo ${acceptPdf ? 'PDF' : 'CSV'}`);
     }
   };
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadBankAcceptance = async () => {
+      try {
+        const raw = await AsyncStorage.getItem('api_user');
+        if (!raw) {
+          setAllowPdf(false);
+          return;
+        }
+        const parsed = JSON.parse(raw);
+        const users = await UsersService.searchUsers({ id: parsed.id });
+        const user = users?.[0];
+        const bankId = user?.bankId;
+        if (!bankId) {
+          if (isMounted) setAllowPdf(false);
+          return;
+        }
+        const bank = await BanksService.searchBankById(bankId);
+        console.log('bank', bank);
+        const type = (bank?.fileAcceptance || '').toString().toUpperCase();
+        const acceptsPdf = type === 'ALL' || type === 'PDF';
+        if (isMounted) setAllowPdf(acceptsPdf);
+      } catch (e) {
+        if (isMounted) setAllowPdf(false);
+      }
+    };
+    if (visible) {
+      loadBankAcceptance();
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [visible]);
 
   const parseCSV = async (uri: string): Promise<JSONBillData[]> => {
     try {
@@ -186,6 +241,35 @@ const CSVImportModal: React.FC<CSVImportModalProps> = ({
     }
 
     try {
+      if (selectedFileType === 'PDF') {
+        if (!selectedFile || !selectedFile.assets || selectedFile.assets.length === 0) {
+          setError('Por favor selecciona un archivo PDF');
+          return;
+        }
+        setIsProcessing(true);
+        setError(null);
+        setUploadStatus('uploading');
+
+        const asset = selectedFile.assets[0];
+        const resolvedUserId = await resolveAuthenticatedUserId();
+
+        await TransactionsService.uploadTransactionsPdf({
+          userId: resolvedUserId,
+          fileUri: asset.uri,
+          fileName: asset.name || 'transactions.pdf',
+          mimeType: asset.mimeType || 'application/pdf',
+        });
+
+        setUploadStatus('success');
+        setError(null);
+        setTimeout(() => {
+          setSelectedFile(null);
+          setSelectedFileType(null);
+          setUploadStatus('idle');
+          onClose();
+        }, 1500);
+        return;
+      }
       setIsProcessing(true);
       setError(null);
       setUploadStatus('uploading');
@@ -195,6 +279,7 @@ const CSVImportModal: React.FC<CSVImportModalProps> = ({
 
       const monthEndpoint = getFullApiUrlWithAuth(API_CONFIG.ENDPOINTS.MONTHS.BASE);
       const txEndpoint = getFullApiUrlWithAuth(API_CONFIG.ENDPOINTS.TRANSACTIONS.BASE);
+      const resolvedUserId = await resolveAuthenticatedUserId();
 
       // Group parsed items by year & month (using JS Date for reliability)
       const groups: Record<string, Array<{ item: JSONBillData; jsDate: Date }>> = {};
@@ -219,12 +304,14 @@ const CSVImportModal: React.FC<CSVImportModalProps> = ({
         groups[key].push({ item, jsDate });
       });
 
-      // Sequentially process each month
+      // Phase 1: Create all months first
+      const monthIds: Record<string, string> = {};
+      
       for (const key of Object.keys(groups)) {
         const [yearStr, monthStr] = key.split('-');
         const year = Number(yearStr);
         const month = Number(monthStr);
-        const monthBody = { userId: user_id, year, month };
+        const monthBody = { userId: resolvedUserId, year, month };
         let monthId: string | null = null;
 
         // 1. Try to create month
@@ -233,40 +320,48 @@ const CSVImportModal: React.FC<CSVImportModalProps> = ({
           headers: getDefaultHeaders(),
           body: JSON.stringify(monthBody),
         });
+        console.log('createRes', createRes);
         if (createRes.ok) {
           const data = await createRes.json();
-          monthId = data?.data?.id ?? null;
-          (`📅 Created month ${monthId}`);
+          monthId = data?.data?.month.id ?? null;
         } else if (createRes.status === 409) {
           // 2. If conflict, fetch existing month via searchBy
           const searchUrl = getFullApiUrlWithAuth(
-            `${API_CONFIG.ENDPOINTS.MONTHS.SEARCH}?userId=${user_id}&year=${year}&month=${month}`
+            `${API_CONFIG.ENDPOINTS.MONTHS.SEARCH}?userId=${resolvedUserId}&year=${year}&month=${month}`
           );
           const searchRes = await fetch(searchUrl, {
             method: 'GET',
             headers: getDefaultHeaders(),
-          });
+          }); 
           if (!searchRes.ok) {
             const errText = await searchRes.text();
             throw new Error(`Failed to fetch existing month: ${errText}`);
           }
           const searchData = await searchRes.json();
-          monthId = searchData?.data?.[0]?.id ?? null;
-          (`ℹ️ Using existing month ${monthId}`);
+          monthId = searchData?.data?.months?.[0]?.id ?? null;
         } else {
           const errText = await createRes.text();
           throw new Error(`Month create failed: ${errText}`);
         }
 
         if (!monthId) throw new Error('monthId not found');
+        monthIds[key] = monthId;
+      }
 
-        // 3. Build & post transactions for this month
+      // Phase 2: Post all transactions for all months
+      for (const key of Object.keys(groups)) {
+        const [yearStr, monthStr] = key.split('-');
+        const year = Number(yearStr);
+        const month = Number(monthStr);
+        const monthId = monthIds[key];
+
+        // Build & post transactions for this month
         const rows = groups[key];
         const txBodies = rows.map(({ item: row, jsDate }) => {
           const rawAmount = Number(row.value);
           const isExpense = rawAmount < 0;
           return {
-            userId: user_id,
+            userId: resolvedUserId,
             monthId,
             type: isExpense ? 'EXPENSE' : 'INCOME',
             description: row.description ?? '',
@@ -288,7 +383,7 @@ const CSVImportModal: React.FC<CSVImportModalProps> = ({
             }
           })
         );
-        (`✅ Posted ${txBodies.length} transactions for month ${year}-${month}`);
+        console.log(`✅ Posted ${txBodies.length} transactions for month ${year}-${month}`);
       }
 
       // All done
@@ -329,7 +424,7 @@ const CSVImportModal: React.FC<CSVImportModalProps> = ({
   const getUploadStatusText = () => {
     switch (uploadStatus) {
       case 'uploading':
-        return 'Subiendo a la API...';
+        return 'Subiendo a la Nube...';
       case 'success':
         return '¡Subida exitosa!';
       case 'error':
@@ -407,12 +502,23 @@ const CSVImportModal: React.FC<CSVImportModalProps> = ({
             <Text style={[styles.fileLabel, { color: colors.textPrimary }]}>Archivo CSV</Text>
             <TouchableOpacity 
               style={[styles.fileButton, { backgroundColor: colors.surface }]} 
-              onPress={pickDocument}
+              onPress={() => pickDocument(false)}
               disabled={isLoading || isProcessing}
             >
               <Ionicons name="document" size={20} color={colors.primary} />
               <Text style={[styles.fileButtonText, { color: colors.primary }]}>Seleccionar Archivo CSV</Text>
             </TouchableOpacity>
+
+            {allowPdf && (
+              <TouchableOpacity 
+                style={[styles.fileButton, { backgroundColor: colors.surface, marginTop: 8 }]} 
+                onPress={() => pickDocument(true)}
+                disabled={isLoading || isProcessing}
+              >
+                <Ionicons name="document-text" size={20} color={colors.primary} />
+                <Text style={[styles.fileButtonText, { color: colors.primary }]}>Seleccionar Archivo PDF</Text>
+              </TouchableOpacity>
+            )}
             
             {selectedFile && (
               <View style={[styles.selectedFileContainer, { backgroundColor: colors.success + '20' }]}>
